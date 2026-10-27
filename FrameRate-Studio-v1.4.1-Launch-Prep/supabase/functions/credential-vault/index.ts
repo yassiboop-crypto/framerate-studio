@@ -187,6 +187,7 @@ Deno.serve(async (request) => {
     const action = String(body.action || '');
 
     if (action === 'status') {
+      await consumeCredentialRateLimit(admin, userId, 'status', 120);
       const { data, error } = await admin.from('framerate_user_credentials').select('provider').eq('user_id', userId);
       if (error) throw new Error('Credential table is missing. Run supabase/schema.sql.');
       const credentials = Object.fromEntries(PROVIDERS.map((provider) => [provider, false])) as Record<Provider, boolean>;
@@ -195,6 +196,7 @@ Deno.serve(async (request) => {
     }
 
     if (action === 'save') {
+      await consumeCredentialRateLimit(admin, userId, 'save', 10);
       const incoming = body.credentials && typeof body.credentials === 'object' ? body.credentials as CredentialMap : {};
       const saved: string[] = [];
       for (const provider of PROVIDERS) {
@@ -215,6 +217,7 @@ Deno.serve(async (request) => {
     }
 
     if (action === 'delete') {
+      await consumeCredentialRateLimit(admin, userId, 'delete', 20);
       if (!isProvider(body.provider)) return json({ error: 'Unknown AI provider.' }, 400, origin);
       const { error } = await admin.from('framerate_user_credentials').delete().eq('user_id', userId).eq('provider', body.provider);
       if (error) throw new Error(`Could not delete the saved ${body.provider} key.`);
