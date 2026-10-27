@@ -938,8 +938,13 @@
           <button id="trailerCloseBtn" type="button" onclick="App.closeTrailer()" aria-label="Close trailer player" class="w-9 h-9 rounded-full theme-subcard font-bold">✕</button>
         </div>
       </header>
-      <div class="aspect-video bg-black">
+      <div class="relative aspect-video bg-black">
         <iframe id="trailerPlayer" title="Film trailer" src="about:blank" class="w-full h-full" loading="eager" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        <div id="trailerPlayerNotice" class="hidden absolute inset-0 flex flex-col items-center justify-center gap-3 bg-neutral-950 px-6 text-center" role="status" aria-live="polite">
+          <div class="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/15 bg-white/5 text-2xl text-white" aria-hidden="true">▶</div>
+          <h3 id="trailerPlayerNoticeTitle" class="text-base sm:text-lg font-black text-white">No embedded trailer found</h3>
+          <p id="trailerPlayerNoticeBody" class="max-w-xl text-sm leading-relaxed text-white/70">FrameRate could not find a trailer that can play inside this page.</p>
+        </div>
       </div>
       <p class="px-4 sm:px-6 py-3 text-[10px] theme-text-muted">Trailer video is provided by YouTube. Availability and playback are controlled by the video publisher.</p>
     </section>
