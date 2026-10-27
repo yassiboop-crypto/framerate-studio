@@ -71,6 +71,8 @@ The checked-in `supabase/config.toml` sets `credential-vault` to `verify_jwt = t
 - Account B: sign in separately and confirm Account A's profile/watchlist/reviews/AI credential status are not exposed.
 - Test sign out, password recovery, and email confirmation links if enabled.
 - Test AI vault save/status/delete with a provider key; verify the raw key is never displayed in network responses or stored in the normal user-data payload.
+- Backdrop validation: a valid HTTPS image URL should work; HTTP, `data:`, `javascript:`, malformed URLs, and URLs containing username/password must be rejected. Check existing TMDB/Fanart HTTPS backdrops still render.
+- In a staging project, verify Credential Vault rate limits: status 120/min, save 10/min, delete 20/min, model list 45/min, and chat 30/min per account/action. Confirm excessive requests return HTTP 429 and ordinary sign-in/key-management flows remain below the limit.
 - Test mobile viewport: header/navigation, modal scrolling, search suggestions, Watchlist List/Grid, profile stats, game UI, and cursor fallback. Touch devices should retain native touch behavior.
 - Check dark/light theme contrast, keyboard focus, reduced-motion preference, and browser console/network errors.
 - Check Netlify deploy logs and Supabase Edge Function logs. Do not share secrets when reporting an error.
@@ -79,7 +81,9 @@ The checked-in `supabase/config.toml` sets `credential-vault` to `verify_jwt = t
 
 - A source review found the site loads Tailwind from `cdn.tailwindcss.com`, plus JSZip, Supabase JS and fonts from CDNs. For a stricter production deployment, bundle Tailwind and pin/self-host dependencies where practical.
 - `netlify.toml` adds baseline response headers but intentionally does not add a Content-Security-Policy because inline scripts and third-party origins need a tested migration first. Do not copy a strict CSP from a template without testing all features.
-- Review every `innerHTML` insertion that receives user/imported/API content; escape untrusted strings or build DOM nodes with `textContent` to reduce XSS risk. This is a recommended full security review item, not a claim that every insertion has been audited.
+- Custom backdrop URLs and saved watchlist artwork now accept HTTPS URLs only and reject malformed URLs and URL userinfo. This does not replace a full review of all image, link, and CSS sinks.
+- Credential Vault status/save/delete actions now use the shared database-backed rate limiter (in addition to the existing model/chat limits). Rate limiting is a baseline control, not a guarantee against abuse.
+- Continue reviewing every `innerHTML` insertion that receives user/imported/API content; escape untrusted strings or build DOM nodes with `textContent` to reduce XSS risk. The full application has not yet had an exhaustive XSS audit.
 - Check upstream provider terms, API quotas, and costs before inviting public users. The proxy's included rate limits are a starting point, not a guarantee against abuse.
 - Add a real Privacy Policy and Terms page with your contact/owner details before public launch, especially if accounts, analytics, or third-party APIs are used. Do not publish placeholder legal text as final advice.
 - Add a custom domain only after the Netlify URL has passed the smoke tests.
