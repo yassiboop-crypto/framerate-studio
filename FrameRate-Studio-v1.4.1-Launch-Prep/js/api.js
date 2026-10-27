@@ -1412,9 +1412,30 @@ const Api = {
       return base;
     }
 
-    if ((keys.tmdb || window.FrameRateAuth?.client) && item.source === 'tmdb' && item.id) {
+    if (keys.tmdb || window.FrameRateAuth?.client) {
       try {
-        const d = await this.getTmdbMovieDetails(item.id);
+        // Search-result fallback: items from iTunes/Letterboxd may not carry a TMDB ID,
+        // so look them up by title before giving up on TMDB metadata and an in-page trailer.
+        let detailId = item.source === 'tmdb' && item.id ? item.id : null;
+        if (!detailId && item.title) {
+          const lookup = await this.searchTmdbMovies(item.title);
+          const candidates = Array.isArray(lookup?.results) ? lookup.results : [];
+          const desiredYear = String(item.year || '').slice(0, 4);
+          let best = null;
+          let bestScore = 0;
+          for (const candidate of candidates) {
+            const titleScore = this.computeSimilarity(item.title, candidate.title || '');
+            const candidateYear = String(candidate.release_date || '').slice(0, 4);
+            const yearBonus = desiredYear && candidateYear === desiredYear ? 0.12 : 0;
+            const score = titleScore + yearBonus;
+            if (score > bestScore) {
+              best = candidate;
+              bestScore = score;
+            }
+          }
+          if (best && bestScore >= 0.54) detailId = best.id;
+        }
+        const d = detailId ? await this.getTmdbMovieDetails(detailId) : null;
         if (d) {
           const directorObj = (d.credits?.crew || []).find(c => c.job === 'Director');
           const topCast = (d.credits?.cast || []).slice(0, 6).map(c => c.name);
