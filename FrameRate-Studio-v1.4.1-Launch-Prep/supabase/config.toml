@@ -1,0 +1,9 @@
+# FrameRate Studio Supabase Edge Function settings.
+# The credential vault requires a signed-in Supabase user.
+[functions.credential-vault]
+verify_jwt = true
+
+# The movie proxy supports Guest Mode too. Its handler enforces origin allow-listing
+# and a database-backed per-IP rate limit before forwarding external requests.
+[functions.movie-data-proxy]
+verify_jwt = false

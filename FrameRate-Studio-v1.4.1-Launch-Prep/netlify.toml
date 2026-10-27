@@ -1,0 +1,29 @@
+[build]
+  publish = "."
+
+# Static-site security headers. A strict CSP is intentionally not set here because
+# the current app uses inline scripts and third-party CDN scripts; harden CSP only
+# after moving inline code and defining the exact provider allow-list.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Cross-Origin-Opener-Policy = "same-origin-allow-popups"
+
+[[headers]]
+  for = "/css/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600, must-revalidate"
+
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600, must-revalidate"
+
+[[headers]]
+  for = "/supabase/*"
+  [headers.values]
+    X-Robots-Tag = "noindex"

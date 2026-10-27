@@ -1,0 +1,89 @@
+# FrameRate Studio v1.4.1 — Production launch checklist
+
+This package prepares the current static app for deployment to Netlify and documents the remaining production steps. It does **not** deploy the site or change your Supabase project automatically.
+
+## Important project facts
+
+- Frontend: static HTML/CSS/JavaScript. Netlify publish directory is the project root (`.`).
+- Backend: Supabase project `FrameRate` (`lzrpvnwuiqlntpfuqfrz`) with database schema and two Edge Functions.
+- `js/supabase-config.js` is intentionally a placeholder in this package. Add only the Supabase project URL and public publishable/anon key there. Never put a `service_role`/secret key in browser files.
+- `movie-data-proxy` uses exact-origin allow-listing. Its production origin must be added to `FRAMERATE_ALLOWED_ORIGINS` before the deployed site can search movies.
+- The app loads Tailwind, Supabase JS, JSZip and fonts from third-party CDNs. Internet access is required for those assets. Tailwind's browser CDN is convenient but not ideal for a strict production Content Security Policy; see the hardening section below.
+
+## A. Configure the frontend
+
+Edit `js/supabase-config.js` with the Supabase URL and public key from Supabase Dashboard → Project Settings → API:
+
+```js
+window.FRAMERATE_SUPABASE_CONFIG = {
+  url: 'https://YOUR_PROJECT_REF.supabase.co',
+  publishableKey: 'YOUR_PUBLIC_PUBLISHABLE_OR_ANON_KEY'
+};
+```
+
+Only the public browser key belongs here. Do not paste private API provider keys or Supabase service-role/secret keys into this file.
+
+## B. Verify Supabase production configuration
+
+In Supabase Dashboard, verify that `supabase/schema.sql` has been applied and that these exist:
+
+- `framerate_user_data`
+- `framerate_user_credentials`
+- `framerate_proxy_rate_limits`
+- `framerate_consume_rate_limit(text, integer, integer)`
+
+Do not blindly reset existing data. The SQL includes `drop function`/policy updates, so inspect the current database and back up important data before rerunning it.
+
+Set server-side Edge Function secrets in Supabase. Never commit their values:
+
+- `FRAMERATE_CREDENTIALS_ENCRYPTION_KEY` — base64 of 32 random bytes; back it up securely and do not lose it after encrypted user credentials exist.
+- `FRAMERATE_ALLOWED_ORIGINS` — comma-separated exact origins, e.g. `http://localhost:8000,https://YOUR-SITE.netlify.app,https://your-custom-domain.example`.
+- `TMDB_API_READ_ACCESS_TOKEN` (or `TMDB_API_KEY`) — required for shared movie search/details.
+- `FANART_API_KEY` — optional unless Fanart functionality is needed.
+- `FRAMERATE_SITE_URL` — set to the production origin.
+
+Deploy the two functions from the project root after linking the correct Supabase project:
+
+```powershell
+npx supabase login
+npx supabase link --project-ref lzrpvnwuiqlntpfuqfrz
+npx supabase functions deploy credential-vault
+npx supabase functions deploy movie-data-proxy
+```
+
+The checked-in `supabase/config.toml` sets `credential-vault` to `verify_jwt = true` and `movie-data-proxy` to `verify_jwt = false`; the latter supports guest movie search, while the function applies its own origin and rate-limit checks.
+
+## C. Deploy to Netlify
+
+1. Create a new site in Netlify and connect a private Git repository, or use Netlify Drop for a one-off preview. Git deployment is recommended for future updates.
+2. Publish directory: `.` (the root containing `index.html`). No build command is required for the current static app.
+3. Set the production domain in Netlify and wait for HTTPS to be active.
+4. Update `FRAMERATE_ALLOWED_ORIGINS` in Supabase with the exact HTTPS origin (no path, no trailing slash). Include the custom domain too if both `www` and apex domains are used.
+5. In Supabase → Authentication → URL Configuration, set the Site URL to the production URL and add exact redirect URLs for the production domain. Keep localhost redirects only if still needed for development.
+6. If email confirmation or password recovery is enabled, configure a real email/SMTP provider and test confirmation/recovery links. Configure OAuth callback/origins separately if Google login is enabled.
+7. Do not deploy a configured `js/supabase-config.js` containing any private key. The publishable key is intended to be public; RLS and server-side checks must protect data.
+
+## D. Production smoke test (desktop and mobile)
+
+- Open the production URL over HTTPS and check there are no failed scripts/assets in browser DevTools.
+- Guest mode: search films, load details/posters, open trailers, and check the movie proxy logs.
+- Account A: sign up/sign in, refresh, update watchlist, remove a film, and confirm changes persist.
+- Account B: sign in separately and confirm Account A's profile/watchlist/reviews/AI credential status are not exposed.
+- Test sign out, password recovery, and email confirmation links if enabled.
+- Test AI vault save/status/delete with a provider key; verify the raw key is never displayed in network responses or stored in the normal user-data payload.
+- Test mobile viewport: header/navigation, modal scrolling, search suggestions, Watchlist List/Grid, profile stats, game UI, and cursor fallback. Touch devices should retain native touch behavior.
+- Check dark/light theme contrast, keyboard focus, reduced-motion preference, and browser console/network errors.
+- Check Netlify deploy logs and Supabase Edge Function logs. Do not share secrets when reporting an error.
+
+## E. Security and release limitations to address before a public launch
+
+- A source review found the site loads Tailwind from `cdn.tailwindcss.com`, plus JSZip, Supabase JS and fonts from CDNs. For a stricter production deployment, bundle Tailwind and pin/self-host dependencies where practical.
+- `netlify.toml` adds baseline response headers but intentionally does not add a Content-Security-Policy because inline scripts and third-party origins need a tested migration first. Do not copy a strict CSP from a template without testing all features.
+- Review every `innerHTML` insertion that receives user/imported/API content; escape untrusted strings or build DOM nodes with `textContent` to reduce XSS risk. This is a recommended full security review item, not a claim that every insertion has been audited.
+- Check upstream provider terms, API quotas, and costs before inviting public users. The proxy's included rate limits are a starting point, not a guarantee against abuse.
+- Add a real Privacy Policy and Terms page with your contact/owner details before public launch, especially if accounts, analytics, or third-party APIs are used. Do not publish placeholder legal text as final advice.
+- Add a custom domain only after the Netlify URL has passed the smoke tests.
+
+## Validation performed for this package
+
+The JavaScript files and inline scripts can be syntax-checked locally, and the ZIP can be integrity-checked. This does not prove a live Supabase/TMDB integration, successful Netlify deployment, or visual correctness across every browser. Those checks require the configured project and real browser/device testing.

@@ -1,0 +1,15 @@
+{
+  "name": "framerate-studio",
+  "version": "1.4.1",
+  "private": true,
+  "description": "FrameRate Studio static web app and Supabase Edge Functions \u2014 launch-preparation release for desktop and mobile",
+  "devDependencies": {
+    "supabase": "^2.122.0"
+  },
+  "scripts": {
+    "supabase:version": "supabase --version",
+    "deploy:vault": "supabase functions deploy credential-vault",
+    "deploy:movie-proxy": "supabase functions deploy movie-data-proxy",
+    "deploy:all": "npm run deploy:vault && npm run deploy:movie-proxy"
+  }
+}
