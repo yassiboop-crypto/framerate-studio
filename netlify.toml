@@ -1,0 +1,30 @@
+[build]
+  # The actual static site lives in the release folder in this repository.
+  base = "FrameRate-Studio-v1.4.1-Launch-Prep"
+  publish = "."
+
+# Keep these headers at the repository root so Netlify applies them when deploying
+# directly from the GitHub repository.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Cross-Origin-Opener-Policy = "same-origin-allow-popups"
+
+[[headers]]
+  for = "/css/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600, must-revalidate"
+
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600, must-revalidate"
+
+[[headers]]
+  for = "/supabase/*"
+  [headers.values]
+    X-Robots-Tag = "noindex"
