@@ -254,7 +254,8 @@
     safeUrl(value) {
       try {
         const url = new URL(String(value || ''));
-        return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : '';
+        if (url.protocol !== 'https:' || !url.hostname || url.username || url.password) return '';
+        return url.href;
       } catch (_) { return ''; }
     },
 

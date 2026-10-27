@@ -36,6 +36,17 @@ const App = {
     })[char]);
   },
 
+  // Backdrop URLs flow into CSS url() values. Normalize and accept HTTPS only.
+  safeImageUrl(value) {
+    try {
+      const url = new URL(String(value ?? '').trim());
+      if (url.protocol !== 'https:' || !url.hostname || url.username || url.password) return '';
+      return url.href;
+    } catch (_) {
+      return '';
+    }
+  },
+
   safeLetterboxdUrl(value, fallback = 'https://letterboxd.com/') {
     try {
       const url = new URL(String(value || ''));
@@ -269,28 +280,30 @@ const App = {
 
   /* ================= FULL-PAGE BACKDROP & 0px BLUR CONTROLLER ================= */
   setFullPageBackdrop(url) {
-    if (!url) return;
-    this.state.activeBackdropUrl = url;
+    const safeUrl = this.safeImageUrl(url);
+    if (!safeUrl) return false;
+    this.state.activeBackdropUrl = safeUrl;
 
     const ambient = document.getElementById('ambientBackdrop');
     if (ambient) {
-      ambient.style.backgroundImage = `url("${url}")`;
+      ambient.style.backgroundImage = `url("${safeUrl}")`;
       ambient.classList.add('has-image');
       this.updateBackdropFilters();
     }
 
     const hero = document.getElementById('filmHeroBanner');
-    if (hero) hero.style.backgroundImage = `url("${url}")`;
+    if (hero) hero.style.backgroundImage = `url("${safeUrl}")`;
 
     const cineCard = document.getElementById('cineCardElement');
-    if (cineCard) cineCard.style.backgroundImage = `url("${url}")`;
+    if (cineCard) cineCard.style.backgroundImage = `url("${safeUrl}")`;
 
     document.querySelectorAll('[data-backdrop-thumb]').forEach(el => {
-      const match = el.getAttribute('data-backdrop-thumb') === url;
+      const match = el.getAttribute('data-backdrop-thumb') === safeUrl;
       el.classList.toggle('ring-2', match);
       el.classList.toggle('ring-frOrange', match);
       el.classList.toggle('scale-[1.02]', match);
     });
+    return true;
   },
 
   setBackdropIntensity(val) {
@@ -342,11 +355,15 @@ const App = {
       this.showToast('Paste a valid image URL first');
       return;
     }
-    const url = input.value.trim();
-    this.setFullPageBackdrop(url);
+    const url = this.safeImageUrl(input.value);
+    if (!url || !this.setFullPageBackdrop(url)) {
+      this.showToast('Use a valid HTTPS image URL.');
+      return;
+    }
 
     if (this.state.film) {
-      const existing = this.state.film.backdrops || [];
+      const existing = (this.state.film.backdrops || [])
+        .map(item => this.safeImageUrl(item)).filter(Boolean);
       if (!existing.includes(url)) {
         this.state.film.backdrops = [url, ...existing];
       }
@@ -813,13 +830,16 @@ const App = {
     const grid = document.getElementById('fanartBackdropGrid');
     if (!grid) return;
 
-    if (!backdrops || !backdrops.length) {
-      grid.innerHTML = `<div class="col-span-full text-center py-4 text-xs theme-text-muted">No additional backdrops found. Paste any image URL above!</div>`;
+    const safeBackdrops = Array.isArray(backdrops)
+      ? [...new Set(backdrops.map(url => this.safeImageUrl(url)).filter(Boolean))]
+      : [];
+    if (!safeBackdrops.length) {
+      grid.innerHTML = `<div class="col-span-full text-center py-4 text-xs theme-text-muted">No additional HTTPS backdrops found. Paste a valid HTTPS image URL above.</div>`;
       return;
     }
 
     grid.innerHTML = '';
-    backdrops.forEach((url, idx) => {
+    safeBackdrops.forEach((url, idx) => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.setAttribute('data-backdrop-thumb', url);
