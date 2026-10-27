@@ -715,20 +715,57 @@ const App = {
     const film = this.state?.film;
     const trailer = film?.trailer;
     if (!film?.title) { this.showToast('Select a film first.'); return; }
-    if (!trailer || trailer.site !== 'YouTube' || !/^[A-Za-z0-9_-]{6,20}$/.test(String(trailer.key || ''))) {
-      const query = encodeURIComponent(`${film.title} ${film.year || ''} official trailer`.trim());
-      window.open(`https://www.youtube.com/results?search_query=${query}`, '_blank', 'noopener,noreferrer');
-      this.showToast('No embedded trailer found; opened YouTube trailer search.');
-      return;
-    }
+
     const modal = document.getElementById('trailerModal');
     const frame = document.getElementById('trailerPlayer');
     const title = document.getElementById('trailerModalTitle');
     const external = document.getElementById('trailerOpenYoutube');
+    const notice = document.getElementById('trailerPlayerNotice');
+    const noticeTitle = document.getElementById('trailerPlayerNoticeTitle');
+    const noticeBody = document.getElementById('trailerPlayerNoticeBody');
     if (!modal || !frame) return;
-    if (title) title.textContent = `${this.state.film.title} — ${trailer.name || 'Trailer'}`;
-    if (external) external.href = `https://www.youtube.com/watch?v=${encodeURIComponent(trailer.key)}`;
-    frame.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(trailer.key)}?autoplay=1&rel=0`;
+
+    const hasTrailer = Boolean(
+      trailer?.site === 'YouTube' &&
+      /^[A-Za-z0-9_-]{6,20}$/.test(String(trailer.key || ''))
+    );
+
+    if (title) {
+      title.textContent = hasTrailer
+        ? `${film.title} — ${trailer.name || 'Trailer'}`
+        : `${film.title} — Trailer unavailable`;
+    }
+
+    if (hasTrailer) {
+      frame.classList.remove('hidden');
+      notice?.classList.add('hidden');
+      if (noticeTitle) noticeTitle.textContent = 'Trailer unavailable';
+      if (noticeBody) noticeBody.textContent = 'No embeddable trailer was found for this film yet.';
+      frame.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(trailer.key)}?autoplay=1&rel=0`;
+      if (external) {
+        external.href = `https://www.youtube.com/watch?v=${encodeURIComponent(trailer.key)}`;
+        external.textContent = 'Open on YouTube ↗';
+        external.classList.remove('hidden');
+      }
+    } else {
+      // Do not redirect users automatically. Keep them in FrameRate and explain
+      // that the shared movie-data proxy may not have returned a trailer.
+      frame.src = 'about:blank';
+      frame.classList.add('hidden');
+      notice?.classList.remove('hidden');
+      if (noticeTitle) noticeTitle.textContent = 'No embedded trailer found';
+      if (noticeBody) {
+        noticeBody.textContent = 'FrameRate could not find a trailer that can play inside this page. Check the movie-data proxy configuration, or use the optional YouTube search link.';
+      }
+      const query = encodeURIComponent(`${film.title} ${film.year || ''} official trailer`.trim());
+      if (external) {
+        external.href = `https://www.youtube.com/results?search_query=${query}`;
+        external.textContent = 'Search on YouTube ↗';
+        external.classList.remove('hidden');
+      }
+      this.showToast('No embedded trailer was found. You can stay here or search YouTube manually.');
+    }
+
     modal.classList.remove('hidden');
     modal.setAttribute('aria-hidden', 'false');
     document.getElementById('trailerCloseBtn')?.focus();
@@ -737,7 +774,12 @@ const App = {
   closeTrailer() {
     const modal = document.getElementById('trailerModal');
     const frame = document.getElementById('trailerPlayer');
-    if (frame) frame.src = 'about:blank';
+    const notice = document.getElementById('trailerPlayerNotice');
+    if (frame) {
+      frame.src = 'about:blank';
+      frame.classList.remove('hidden');
+    }
+    notice?.classList.add('hidden');
     if (modal) {
       modal.classList.add('hidden');
       modal.setAttribute('aria-hidden', 'true');
