@@ -8,8 +8,22 @@ const corsHeaders = (origin: string) => ({
   'Vary': 'Origin',
 });
 function allowedOrigins(): string[] {
-  return (Deno.env.get('FRAMERATE_ALLOWED_ORIGINS') || 'http://localhost:8000,http://127.0.0.1:8000')
+  return (Deno.env.get('FRAMERATE_ALLOWED_ORIGINS') || 'https://framerate-studio.netlify.app,http://localhost:8000,http://127.0.0.1:8000')
     .split(',').map((value) => value.trim()).filter(Boolean);
+}
+
+function isAllowedOrigin(origin: string, configured: string[]): boolean {
+  if (configured.includes(origin)) return true;
+  // Allow only Netlify deploy previews for this exact FrameRate site slug.
+  // Do not allow arbitrary *.netlify.app origins.
+  try {
+    const parsed = new URL(origin);
+    return parsed.protocol === 'https:' &&
+      /^deploy-preview-\\d+--framerate-studio\\.netlify\\.app$/.test(parsed.hostname) &&
+      parsed.origin === origin;
+  } catch (_) {
+    return false;
+  }
 }
 function json(data: unknown, status = 200, origin = ''): Response {
   return new Response(JSON.stringify(data), {
@@ -72,7 +86,7 @@ async function cached(key: string, ttlMs: number, fetcher: () => Promise<unknown
 
 Deno.serve(async (request) => {
   const origin = request.headers.get('origin') || '';
-  if (!origin || !allowedOrigins().includes(origin)) return new Response('Origin not allowed', { status: 403 });
+  if (!origin || !isAllowedOrigin(origin, allowedOrigins())) return new Response('Origin not allowed', { status: 403 });
   if (request.method === 'OPTIONS') return new Response('ok', { status: 200, headers: corsHeaders(origin) });
   if (request.method !== 'POST') return json({ error: 'Method not allowed.' }, 405, origin);
 
