@@ -285,3 +285,14 @@ body.tl-modal-open{overflow:hidden}
 .tl-film-art-badge svg{color:#e5d2ff}
 .tl-film-votes{color:#91a0ad}
 @media(prefers-reduced-motion:reduce){.tl-film-actions .tl-feedback-button svg{transition:none!important}}
+
+
+/* Optional Taste Lab AI reranking controls and privacy feedback. */
+.tl-ai-button{background:linear-gradient(135deg,#bfece6,#a9b9ff);border-color:rgba(191,236,230,.65);box-shadow:0 8px 22px rgba(106,143,194,.13)}
+.tl-ai-button:disabled{filter:saturate(.55);cursor:not-allowed}
+.tl-ai-status{margin:12px 0 0;color:#aab7c4;font-size:10px;line-height:1.7;min-height:15px}
+.tl-ai-status.is-working{color:#cbb5ff}
+.tl-ai-status.is-ready{color:#a8d8ce}
+.tl-ai-status.is-error{color:#e7aa9b}
+.tl-ai-privacy-note{max-width:760px;margin:5px 0 0;color:#72828e;font-size:9px;line-height:1.7}
+@media(max-width:680px){.tl-hero-actions{align-items:stretch}.tl-hero-actions>*{max-width:100%;flex:1 1 100%}.tl-ai-status,.tl-ai-privacy-note{font-size:10px}}
