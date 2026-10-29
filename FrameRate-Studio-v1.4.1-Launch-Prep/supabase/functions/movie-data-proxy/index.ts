@@ -8,8 +8,15 @@ const corsHeaders = (origin: string) => ({
   'Vary': 'Origin',
 });
 function allowedOrigins(): string[] {
-  return (Deno.env.get('FRAMERATE_ALLOWED_ORIGINS') || 'https://framerate-studio.netlify.app,http://localhost:8000,http://127.0.0.1:8000')
+  const defaults = [
+    'https://framerate-studio.netlify.app',
+    'https://framerate-studio.ybenlahcen7.workers.dev',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+  ];
+  const configured = (Deno.env.get('FRAMERATE_ALLOWED_ORIGINS') || '')
     .split(',').map((value) => value.trim()).filter(Boolean);
+  return [...new Set([...defaults, ...configured])];
 }
 
 function isAllowedOrigin(origin: string, configured: string[]): boolean {
