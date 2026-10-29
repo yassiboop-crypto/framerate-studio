@@ -28,6 +28,7 @@
     // Taste Lab cache and feedback are account-scoped locally, not cloud-synced yet.
     'fr_taste_profile_v1',
     'fr_taste_feedback_v1',
+    'fr_taste_filters_v1',
     'fr_ai_provider',
     'fr_ai_model',
     'fr_key_tmdb',
