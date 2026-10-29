@@ -28,6 +28,10 @@ function chips(id,items,negative,empty,format,onPick){
   }else n.appendChild(el('span','tl-chip'+(negative?' tl-chip-negative':''),label));
  });
 }
+function syncFilterControls(){
+ const ids={title:'tl-title-filter',genre:'tl-genre-filter',excludeGenre:'tl-exclude-genre-filter',yearFrom:'tl-year-from-filter',yearTo:'tl-year-to-filter',rating:'tl-rating-filter',votes:'tl-votes-filter',runtimeMin:'tl-runtime-min-filter',runtimeMax:'tl-runtime-max-filter',language:'tl-original-language',focusAspect:'tl-focus-aspect',avoidAspect:'tl-avoid-aspect',focusTheme:'tl-focus-theme',sort:'tl-sort-filter'};
+ Object.entries(ids).forEach(([key,id])=>{const node=$(id);if(node&&state.filters[key]!==undefined)node.value=state.filters[key];});
+}
 function activateInsight(type,item){
  const f=state.filters;
  if(type==='genre'){f.genre=String(item.id);f.excludeGenre='any';f.title='';}
@@ -35,7 +39,7 @@ function activateInsight(type,item){
  else if(type==='focusAspect'){f.focusAspect=String(item.key||'any');f.avoidAspect='any';}
  else if(type==='avoidAspect'){f.avoidAspect=String(item.key||'any');f.focusAspect='any';}
  else if(type==='focusTheme'){f.focusTheme=String(item.key||'any');}
- collectFilters();readFilters();
+ syncFilterControls();collectFilters();
  if(window.TasteLabExperience)window.TasteLabExperience.setStep('tune');
  toast(type==='genre'?'Searching this genre…':type==='excludeGenre'?'Excluding this genre…':type==='focusTheme'?'Prioritizing this theme…':'Using this review signal…');
  void load({refreshCandidates:true});
