@@ -196,30 +196,63 @@ function posterImage(movie,art){
  art.appendChild(node);
 }
 function openFilmInStudio(m){
- const params=new URLSearchParams();params.set('frMovieId',String(m.id||''));params.set('frMovieTitle',String(m.title||''));params.set('frMovieYear',String(m.release_date||'').slice(0,4));params.set('frMoviePoster',String(m.poster_path||''));
+ const params=new URLSearchParams();
+ params.set('frMovieId',String(m.id||''));
+ params.set('frMovieTitle',String(m.title||''));
+ params.set('frMovieYear',String(m.release_date||'').slice(0,4));
+ params.set('frMoviePoster',String(m.poster_path||''));
+ params.set('frMovieBackdrop',String(m.backdrop_path||''));
+ params.set('frMovieOverview',String(m.overview||'').slice(0,1600));
+ params.set('frMovieGenres',(m._tasteGenres||[]).join('|'));
  window.location.href='index.html?'+params.toString();
 }
 function filmCard(m){
- const card=el('article','tl-film-card'),art=el('div','tl-film-art');posterImage(m,art);
- art.setAttribute('role','link');art.setAttribute('tabindex','0');art.setAttribute('aria-label','Open '+m.title+' in FrameRate Studio');
+ const card=el('article','tl-film-card'),art=el('div','tl-film-art');
+ posterImage(m,art);
+ art.setAttribute('role','link');art.setAttribute('tabindex','0');
+ art.setAttribute('aria-label','Open '+m.title+' in FrameRate Studio');
  art.addEventListener('click',()=>openFilmInStudio(m));
- art.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openFilmInStudio(m);}});
- art.appendChild(el('span','tl-film-art-badge','◈ '+m._tasteFit+' FIT'));
- art.appendChild(el('span','tl-film-year-badge',String(m.release_date||'').slice(0,4)||'—'));card.appendChild(art);
- const body=el('div','tl-film-content');const title=el('button','tl-film-title tl-film-title-link',m.title);title.type='button';title.addEventListener('click',()=>openFilmInStudio(m));body.appendChild(title);
- const meta=el('div','tl-film-meta');meta.appendChild(el('span','tl-film-rating','★ '+(Number(m.vote_average)?Number(m.vote_average).toFixed(1):'—')+' / 10 TMDB'));
- if(Number(m.vote_count)>0)meta.appendChild(el('span','',Number(m.vote_count).toLocaleString()+' votes'));
- body.appendChild(meta);body.appendChild(el('p','tl-film-overview',m.overview||'No synopsis is available for this title yet.'));
- const reason=el('p','tl-film-reason');reason.appendChild(el('span','','✦'));reason.appendChild(el('span','',(m._tasteReasons||['A new film to explore.']).join(' ')));body.appendChild(reason);
- const genreChips=el('div','tl-film-genres');(m._tasteGenres||[]).slice(0,3).forEach(x=>genreChips.appendChild(el('span','tl-film-genre',x)));if(genreChips.childElementCount)body.appendChild(genreChips);
+ art.addEventListener('keydown',e=>{
+  if(e.target!==art)return;
+  if(e.key==='Enter'||e.key===' '){e.preventDefault();openFilmInStudio(m);}
+ });
+ const fit=el('span','tl-film-art-badge');
+ fit.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>'+String(m._tasteFit||0)+'% FIT</span>';
+ art.appendChild(fit);
+ art.appendChild(el('span','tl-film-year-badge',String(m.release_date||'').slice(0,4)||'—'));
+ const trailer=el('button','tl-trailer-circle');
+ trailer.type='button';trailer.title='Watch trailer';trailer.setAttribute('aria-label','Watch trailer for '+m.title);
+ trailer.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13L19 12 8 5.5Z" fill="currentColor"/></svg>';
+ trailer.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();openTasteTrailer(m);});
+ trailer.addEventListener('keydown',event=>event.stopPropagation());
+ art.appendChild(trailer);
+ card.appendChild(art);
+
+ const body=el('div','tl-film-content');
+ const title=el('button','tl-film-title tl-film-title-link',m.title);
+ title.type='button';title.addEventListener('click',()=>openFilmInStudio(m));body.appendChild(title);
+ const meta=el('div','tl-film-meta');
+ meta.innerHTML='<span class="tl-film-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z" fill="currentColor"/></svg> '+(Number(m.vote_average)?Number(m.vote_average).toFixed(1):'—')+' / 10 TMDB</span>';
+ if(Number(m.vote_count)>0){const votes=el('span','tl-film-votes');votes.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 19c.5-3 2.4-4.5 5.5-4.5s5 1.5 5.5 4.5M16 5.5a3 3 0 0 1 0 5.8M17 14c2.1.5 3.2 2 3.5 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg> '+Number(m.vote_count).toLocaleString();meta.appendChild(votes);}
+ body.appendChild(meta);
+ body.appendChild(el('p','tl-film-overview',m.overview||'No synopsis is available for this title yet.'));
+ const reason=el('p','tl-film-reason');
+ reason.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2ZM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16Z" fill="currentColor"/></svg><span>'+((m._tasteReasons||['A new film to explore.']).join(' '))+'</span>';
+ body.appendChild(reason);
+ const genreChips=el('div','tl-film-genres');
+ (m._tasteGenres||[]).slice(0,3).forEach(x=>genreChips.appendChild(el('span','tl-film-genre',x)));
+ if(genreChips.childElementCount)body.appendChild(genreChips);
  const actions=el('div','tl-film-actions');
- const add=el('button','tl-feedback-button is-primary tl-add-cinema','＋ Add to My Cinema');add.type='button';add.addEventListener('click',()=>addToWatchlist(m,add));actions.appendChild(add);
- [['more-like-this','More like this','tl-feedback-button'],['not-for-me','Not for me','tl-feedback-button is-danger'],['already-watched','Already watched','tl-feedback-button']].forEach(([action,label,cls])=>{const b=el('button',cls,label);b.type='button';b.addEventListener('click',()=>saveFeedback(m,action));actions.appendChild(b);});
- body.appendChild(actions);
- const row=el('div','tl-film-trailer-row'),trailer=el('button','tl-trailer-circle','');trailer.type='button';trailer.title='Watch trailer';trailer.setAttribute('aria-label','Watch trailer for '+m.title);
- trailer.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13L19 12 8 5.5Z" fill="currentColor"/></svg><span>Trailer</span>';
- trailer.addEventListener('click',()=>openTasteTrailer(m));row.appendChild(trailer);body.appendChild(row);
- card.appendChild(body);return card;
+ const add=el('button','tl-feedback-button is-primary tl-add-cinema');
+ add.type='button';add.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Add to My Cinema</span>';
+ add.addEventListener('click',()=>addToWatchlist(m,add));actions.appendChild(add);
+ const feedbackActions=[
+  ['more-like-this','More like this','tl-feedback-button','<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.7c0 5.1-8.8 10-8.8 10s-8.8-4.9-8.8-10A4.7 4.7 0 0 1 12 6.4a4.7 4.7 0 0 1 8.8 2.3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>'],
+  ['not-for-me','Not for me','tl-feedback-button is-danger','<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h3v11H6zM9 6h7.2a2 2 0 0 1 1.9 2.6l-1.4 4.5a2 2 0 0 1-1.9 1.4H11l.6 3.1a1.5 1.5 0 0 1-2.3 1.5L6 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/></svg>'],
+  ['already-watched','Already watched','tl-feedback-button','<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.2-6 9.5-6 9.5 6 9.5 6-3.2 6-9.5 6-9.5-6-9.5-6Z" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="2.7" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="m16 4 1.5 1.5L20 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>']
+ ];
+ feedbackActions.forEach(([action,label,cls,icon])=>{const b=el('button',cls);b.type='button';b.innerHTML=icon+'<span>'+label+'</span>';b.addEventListener('click',()=>saveFeedback(m,action));actions.appendChild(b);});
+ body.appendChild(actions);card.appendChild(body);return card;
 }
 function applyFilters(ranked){
  const f=state.filters;
