@@ -9,12 +9,8 @@ const SYSTEM='You are the ranking component of FrameRate Taste Lab, a movie-disc
 function read(key,fallback){try{const value=localStorage.getItem(key);return value===null?fallback:value;}catch(_){return fallback;}}
 function localKey(provider){return String(read('fr_key_'+provider,'')||'').trim();}
 function hasCredential(provider){try{if(window.FrameRateAuth&&window.FrameRateAuth.hasCloudCredential&&window.FrameRateAuth.hasCloudCredential(provider))return true;}catch(_){}return Boolean(localKey(provider));}
-function resolveProvider(){
- const selected=String(read('fr_ai_provider','auto')||'auto').trim().toLowerCase();
- let provider=selected;
- if(selected==='auto')provider=PROVIDERS.find(hasCredential)||'';
- else if(!PROVIDERS.includes(selected))provider='';
- if(!provider||!hasCredential(provider))return {error:'missing-provider',selected};
+function resolveProviderFor(provider){
+ if(!PROVIDERS.includes(provider)||!hasCredential(provider))return {error:'missing-provider',selected:provider};
  const stored=String(read('fr_ai_model','auto-discover')||'auto-discover').trim();
  let model=stored;
  if(!model||model==='auto-discover'||model==='local-critic')model=DEFAULT_MODELS[provider];
@@ -23,6 +19,15 @@ function resolveProvider(){
  if(provider==='openai'&&!/^gpt-/i.test(model))model=DEFAULT_MODELS.openai;
  if(provider==='openrouter'&&!model.includes('/'))model=DEFAULT_MODELS.openrouter;
  return {provider,model,cloud:Boolean(window.FrameRateAuth&&window.FrameRateAuth.hasCloudCredential&&window.FrameRateAuth.hasCloudCredential(provider))};
+}
+function resolveProvider(){
+ const selected=String(read('fr_ai_provider','auto')||'auto').trim().toLowerCase();
+ if(selected==='auto'){
+  const provider=PROVIDERS.find(hasCredential)||'';
+  return provider?resolveProviderFor(provider):{error:'missing-provider',selected};
+ }
+ if(!PROVIDERS.includes(selected))return {error:'missing-provider',selected};
+ return resolveProviderFor(selected);
 }
 function hash(value){const input=typeof value==='string'?value:JSON.stringify(value);let a=2166136261,b=5381;for(let i=0;i<input.length;i++){const c=input.charCodeAt(i);a=Math.imul(a^c,16777619);b=((b<<5)+b)^c;}return (a>>>0).toString(16).padStart(8,'0')+(b>>>0).toString(16).padStart(8,'0');}
 function cleanText(value,max){return String(value||'').replace(/\s+/g,' ').trim().slice(0,max);}
@@ -59,7 +64,7 @@ async function providerText(config,prompt){
  const auth=window.FrameRateAuth;
  if(auth&&auth.hasCloudCredential&&auth.hasCloudCredential(config.provider)){
   if(typeof auth.invokeCredentialVault!=='function')throw new Error('The secure AI vault is not available in this page.');
-  const response=await auth.invokeCredentialVault({action:'chat',provider:config.provider,model:config.model,system:SYSTEM,prompt,maxTokens:2200,temperature:0.15}),text=String(response&&response.text||'').trim();
+  const response=await auth.invokeCredentialVault({action:'chat',provider:config.provider,model:config.model,system:SYSTEM,prompt,maxTokens:2200,temperature:0.15,responseFormat:'json_object'}),text=String(response&&response.text||'').trim();
   if(!text)throw new Error('The AI provider returned an empty response.');return text;
  }
  const key=localKey(config.provider);if(!key)throw new Error('No API key is configured for the selected AI provider.');
@@ -72,7 +77,7 @@ async function providerText(config,prompt){
  }
  const headers={'Content-Type':'application/json','Authorization':'Bearer '+key};
  if(config.provider==='openrouter'){headers['HTTP-Referer']='https://framerate-studio.netlify.app';headers['X-Title']='FrameRate Studio Taste Lab';}
- const response=await fetchWithTimeout(API_URLS[config.provider],{method:'POST',headers,body:JSON.stringify({model:config.model,messages:[{role:'system',content:SYSTEM},{role:'user',content:prompt}],temperature:0.15,max_tokens:1800})});
+ const response=await fetchWithTimeout(API_URLS[config.provider],{method:'POST',headers,body:JSON.stringify({model:config.model,messages:[{role:'system',content:SYSTEM},{role:'user',content:prompt}],temperature:0.15,max_tokens:1800,response_format:{type:'json_object'}})});
  const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(config.provider+' returned HTTP '+response.status+'. Check the selected model and API quota.');
  const text=String(data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content||'').trim();
  if(!text)throw new Error('The AI provider returned no ranking text.');return text;
@@ -83,12 +88,29 @@ function validateRankings(raw,candidateIds){
  if(!rankings.length)throw new Error('The AI response did not contain any valid film IDs. The local ranking was kept.');return rankings;
 }
 async function rank(context){
- const config=resolveProvider();if(config.error==='missing-provider')throw new Error('Choose Gemini, Groq, OpenAI, or OpenRouter and configure its API key in the main Studio API Vault first.');
- const input=buildInput(context,config),cached=readCache();
- if(cached&&cached.key===input.key)return {rankings:cached.rankings,cacheKey:cached.key,provider:cached.provider,model:cached.model,cached:true,createdAt:cached.createdAt};
- const text=await providerText(config,input.prompt),parsed=parseJson(text),rankings=validateRankings(parsed,input.candidateIds);
- const record={version:1,key:input.key,provider:config.provider,model:config.model,createdAt:new Date().toISOString(),rankings};storeCache(record);
- return {rankings,cacheKey:input.key,provider:config.provider,model:config.model,cached:false,createdAt:record.createdAt};
+ const primary=resolveProvider();
+ if(primary.error==='missing-provider')throw new Error('Choose Gemini, Groq, or OpenAI and save at least one working API key in the main Studio API Vault first.');
+ const primaryInput=buildInput(context,primary),cached=readCache();
+ if(cached&&cached.key===primaryInput.key)return {rankings:cached.rankings,cacheKey:primaryInput.key,provider:cached.provider,model:cached.model,cached:true,createdAt:cached.createdAt};
+
+ const configs=[primary,...PROVIDERS.filter(provider=>provider!==primary.provider&&hasCredential(provider)).map(resolveProviderFor).filter(config=>!config.error)];
+ const failures=[];
+ for(const config of configs){
+  try{
+   const text=await providerText(config,primaryInput.prompt);
+   const parsed=parseJson(text),rankings=validateRankings(parsed,primaryInput.candidateIds);
+   // Keep the cache key anchored to the user's selected provider/context so a
+   // successful fallback can still be applied to the exact current candidate set.
+   const record={version:1,key:primaryInput.key,provider:config.provider,model:config.model,createdAt:new Date().toISOString(),rankings};
+   storeCache(record);
+   return {rankings,cacheKey:primaryInput.key,provider:config.provider,model:config.model,cached:false,fallback:config.provider!==primary.provider,createdAt:record.createdAt};
+  }catch(error){
+   const detail=String(error&&error.message||'request failed').replace(/\s+/g,' ').slice(0,150);
+   failures.push(config.provider+' ('+config.model+'): '+detail);
+   console.warn('[Taste Lab AI] Provider attempt failed:',config.provider,detail);
+  }
+ }
+ throw new Error('All saved AI providers failed. '+failures.join(' | '));
 }
 function getCached(context){try{const config=resolveProvider();if(config.error)return null;const input=buildInput(context,config),record=readCache();return record&&record.key===input.key?{rankings:record.rankings,cacheKey:record.key,provider:record.provider,model:record.model,cached:true,createdAt:record.createdAt}:null;}catch(_){return null;}}
 function applyRanking(movies,context,result){
