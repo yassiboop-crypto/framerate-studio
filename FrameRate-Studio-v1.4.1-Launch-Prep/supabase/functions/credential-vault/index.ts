@@ -26,7 +26,7 @@ function isAllowedOrigin(origin: string, configured: string[]): boolean {
   try {
     const parsed = new URL(origin);
     return parsed.protocol === 'https:' &&
-      /^deploy-preview-\\d+--framerate-studio\\.netlify\\.app$/.test(parsed.hostname) &&
+      /^deploy-preview-\d+--framerate-studio\.netlify\.app$/.test(parsed.hostname) &&
       parsed.origin === origin;
   } catch (_) {
     return false;
