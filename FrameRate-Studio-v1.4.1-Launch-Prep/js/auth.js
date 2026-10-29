@@ -71,6 +71,7 @@
     syncRequested: false,
     credentialStatus: {},
     credentialStatusError: '',
+    guestCredentialMigrationPromptedFor: null,
 
     init() {
       this.injectAccountButton();
@@ -321,6 +322,72 @@
       }
     },
 
+    async offerGuestCredentialMigration() {
+      const userId = this.currentUser?.id;
+      if (!userId || !this.cloudReady || !this.client || this.credentialStatusError) return false;
+      if (this.guestCredentialMigrationPromptedFor === userId) return false;
+
+      const providers = ['groq', 'openai', 'gemini', 'openrouter'];
+      const guestCredentials = {};
+      providers.forEach(provider => {
+        if (this.credentialStatus?.[provider]) return; // Never overwrite this account's existing key.
+        const storageKey = this.profileStorageKey(`fr_key_${provider}`, 'guest');
+        const value = this.originalStorageGet.call(localStorage, storageKey);
+        if (typeof value === 'string' && value.trim()) guestCredentials[provider] = value.trim();
+      });
+      const names = Object.keys(guestCredentials);
+      if (!names.length) return false;
+
+      this.guestCredentialMigrationPromptedFor = userId;
+      const accountLabel = this.currentUser.email ? ` (${this.currentUser.email})` : '';
+      const accepted = window.confirm(
+        `Found API key(s) saved in Guest Mode: ${names.map(name => name.toUpperCase()).join(', ')}.\n\n` +
+        `Move these keys into the encrypted AI vault for the signed-in account${accountLabel}? They will be removed from the Guest profile only after the cloud vault confirms they were saved.\n\n` +
+        'Choose Cancel to keep them saved separately in Guest Mode.'
+      );
+      if (!accepted) {
+        this.showToast('Your API keys remain saved in Guest Mode. They were not deleted or uploaded to this account.');
+        return false;
+      }
+
+      try {
+        const response = await this.invokeCredentialVault({ action: 'save', credentials: guestCredentials });
+        if (this.currentUser?.id !== userId || !this.cloudReady) return false;
+        const statuses = response.credentials && typeof response.credentials === 'object'
+          ? response.credentials
+          : {};
+        const moved = [];
+        names.forEach(provider => {
+          if (statuses[provider]) {
+            this.originalStorageRemove.call(localStorage, this.profileStorageKey(`fr_key_${provider}`, 'guest'));
+            moved.push(provider);
+          }
+        });
+        this.credentialStatus = Object.fromEntries(providers.map(provider => [
+          provider,
+          Boolean(statuses[provider] || this.credentialStatus?.[provider])
+        ]));
+        this.credentialStatusError = '';
+        this.updateCredentialStatusUI();
+        if (window.Api?.populateModelDropdowns) {
+          window.Api.populateModelDropdowns(
+            localStorage.getItem('fr_ai_provider') || 'auto',
+            localStorage.getItem('fr_ai_model') || 'auto-discover'
+          );
+        }
+        if (moved.length) {
+          this.showToast(`Moved ${moved.map(name => name.toUpperCase()).join(', ')} to this account's encrypted AI vault.`);
+        } else {
+          this.showToast('The cloud vault did not confirm the API keys. Your original Guest keys were kept.');
+        }
+        return moved.length > 0;
+      } catch (error) {
+        console.warn('[FrameRate Auth] Guest API key transfer failed; original keys remain in Guest Mode:', error);
+        this.showToast(`Could not move Guest API keys. They remain saved in Guest Mode. ${error.message || ''}`);
+        return false;
+      }
+    },
+
     async handleSession(session, eventName = '') {
       const user = session?.user;
       if (!user?.id || !this.configured) {
@@ -415,7 +482,9 @@
           this.refreshApplicationFromStorage();
           window.dispatchEvent(new CustomEvent('frameratedataready'));
           this.updateHeader();
-          if (this.cloudReady) void this.refreshCloudCredentials();
+          if (this.cloudReady) {
+            void this.refreshCloudCredentials().then(() => this.offerGuestCredentialMigration());
+          }
           if (this.syncRequested && this.cloudReady) {
             clearTimeout(this.syncTimer);
             this.syncTimer = setTimeout(() => this.syncCurrentPayload(), 250);
