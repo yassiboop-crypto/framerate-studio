@@ -202,12 +202,24 @@
 .tl-trailer-youtube:hover{background:rgba(181,138,242,.15)}
 body.tl-modal-open{overflow:hidden}
 @media(max-width:700px){
- .tl-film-art{aspect-ratio:auto!important;min-height:100%;height:100%}
+ .tl-film-card{display:flex!important}
+ .tl-film-art{width:100%;height:300px;min-height:0!important;max-height:340px;aspect-ratio:auto!important;flex:none}
  .tl-film-poster{object-fit:contain!important}
  .tl-film-art:after{inset:60% 0 0}
+ .tl-film-content{width:100%;padding:16px}
+ .tl-film-title-link{font-size:16px}
  .tl-filter-grid{grid-template-columns:minmax(0,1fr)}
  .tl-trailer-circle{width:41px;height:41px}
  .tl-trailer-dialog-footer{align-items:flex-start;flex-direction:column}
  .tl-trailer-youtube{align-self:flex-start}
 }
 @media(prefers-reduced-motion:reduce){.tl-trailer-circle,.tl-chip-button,.tl-add-cinema{transition:none!important}}
+
+/* Poster-first card layout: keep the full portrait frame visible on every screen. */
+.tl-film-art{aspect-ratio:2/3!important;cursor:pointer}
+.tl-film-poster{object-fit:contain!important}
+@media(max-width:700px){
+ .tl-film-card{display:flex!important}
+ .tl-film-art{height:clamp(270px,78vw,340px);max-height:340px;aspect-ratio:auto!important}
+ .tl-film-content{flex:1}
+}
