@@ -712,7 +712,12 @@
         } else if (this.currentUser?.id) {
           status.textContent = 'Account is still syncing. Wait a moment before saving cloud AI keys.';
         } else {
-          status.textContent = 'Guest mode: AI keys stay in this browser. Sign in to save them encrypted to your account and use them on other devices.';
+          const guestNames = ['groq', 'openai', 'gemini', 'openrouter'].filter(provider =>
+            Boolean(localStorage.getItem(`fr_key_${provider}`))
+          );
+          status.textContent = guestNames.length
+            ? `Guest Mode · Saved in this browser: ${guestNames.map(name => name.toUpperCase()).join(', ')}. These keys are not yet on your Google account; after sign-in you can choose to move them to the encrypted account vault.`
+            : 'Guest Mode · No API keys saved in this browser yet. Save a key here, or sign in to save it to the encrypted account vault.';
         }
       }
       ['groq', 'openai', 'gemini', 'openrouter'].forEach(provider => {
