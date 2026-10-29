@@ -1196,9 +1196,10 @@ const Api = {
           });
         }
       } else {
+        // Empty password inputs are intentionally blank for saved keys; never
+        // interpret them as a request to delete existing Guest credentials.
         Object.entries(enteredCredentials).forEach(([provider, value]) => {
           if (value) localStorage.setItem(`fr_key_${provider}`, value);
-          else localStorage.removeItem(`fr_key_${provider}`);
         });
       }
     } catch (error) {
