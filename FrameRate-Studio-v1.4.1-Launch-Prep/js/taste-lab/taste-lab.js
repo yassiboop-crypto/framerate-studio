@@ -291,7 +291,7 @@ async function openTasteTrailer(movie){
   const details=await proxy('details',{id:movie.id});if(requestId!==state.trailerRequestId)return;
   const videos=details&&details.videos&&Array.isArray(details.videos.results)?details.videos.results:[];
   const chosen=videos.filter(v=>v&&v.site==='YouTube'&&/^[A-Za-z0-9_-]{6,20}$/.test(String(v.key||''))&&['Trailer','Teaser'].includes(String(v.type||''))).sort((a,b)=>Number(b.type==='Trailer')-Number(a.type==='Trailer')||Number(Boolean(b.official))-Number(Boolean(a.official)))[0];
-  if(chosen){frame.src='https://www.youtube-nocookie.com/embed/'+encodeURIComponent(chosen.key)+'?autoplay=1&rel=0';frame.classList.remove('tl-hidden');notice.classList.add('tl-hidden');external.href='https://www.youtube.com/watch?v='+encodeURIComponent(chosen.key);external.classList.remove('tl-hidden');}
+  if(chosen){frame.src='https://www.youtube-nocookie.com/embed/'+encodeURIComponent(chosen.key)+'?autoplay=1&rel=0';frame.classList.remove('tl-hidden');notice.classList.add('tl-hidden');external.href='https://www.youtube.com/watch?v='+encodeURIComponent(chosen.key);external.textContent='Open on YouTube ↗';external.classList.remove('tl-hidden');}
   else{notice.textContent='No embedded trailer was found for this film. You can search YouTube without leaving this page.';external.href='https://www.youtube.com/results?search_query='+encodeURIComponent((movie.title||'')+' '+String(movie.release_date||'').slice(0,4)+' official trailer');external.textContent='Search YouTube ↗';external.classList.remove('tl-hidden');}
  }catch(_){if(requestId!==state.trailerRequestId)return;notice.textContent='The trailer service could not be reached. You can still search YouTube for this film.';external.href='https://www.youtube.com/results?search_query='+encodeURIComponent((movie.title||'')+' official trailer');external.textContent='Search YouTube ↗';external.classList.remove('tl-hidden');}
 }
@@ -341,8 +341,12 @@ async function load(options){
    setStatus(state.library.length?'Searching a fresh catalogue batch against your taste signals…':'Loading a new catalogue batch. Import history to personalize it…');
    state.candidates=await fetchCandidateBatch();safeStore(CURRENT_BATCH_KEY,state.candidates);
   }else if(!state.candidates.length){
-   state.candidates=readArray(CURRENT_BATCH_KEY);
-   if(!state.candidates.length){setStatus('Preparing the first recommendation batch…');state.candidates=await fetchCandidateBatch();safeStore(CURRENT_BATCH_KEY,state.candidates);}
+   let cachedBatchExists=false;
+   try{
+    const cachedRaw=localStorage.getItem(CURRENT_BATCH_KEY);
+    if(cachedRaw!==null){const parsed=JSON.parse(cachedRaw);if(Array.isArray(parsed)){state.candidates=parsed;cachedBatchExists=true;}}
+   }catch(_){}
+   if(!cachedBatchExists){setStatus('Preparing the first recommendation batch…','warning');state.candidates=await fetchCandidateBatch();safeStore(CURRENT_BATCH_KEY,state.candidates);}
   }
   if(token!==state.loadToken)return;
   render();
