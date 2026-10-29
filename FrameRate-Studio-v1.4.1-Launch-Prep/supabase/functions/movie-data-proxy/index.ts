@@ -14,12 +14,12 @@ function allowedOrigins(): string[] {
 
 function isAllowedOrigin(origin: string, configured: string[]): boolean {
   if (configured.includes(origin)) return true;
-  // Allow only Netlify deploy previews for this exact FrameRate site slug.
-  // Do not allow arbitrary *.netlify.app origins.
+  // Permit only HTTPS Deploy Previews for this exact Netlify site slug.
+  // This is intentionally narrower than accepting every *.netlify.app origin.
   try {
     const parsed = new URL(origin);
     return parsed.protocol === 'https:' &&
-      /^deploy-preview-\\d+--framerate-studio\\.netlify\\.app$/.test(parsed.hostname) &&
+      /^deploy-preview-\d+--framerate-studio\.netlify\.app$/.test(parsed.hostname) &&
       parsed.origin === origin;
   } catch (_) {
     return false;
