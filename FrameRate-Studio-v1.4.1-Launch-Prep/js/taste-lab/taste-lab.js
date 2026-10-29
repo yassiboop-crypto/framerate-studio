@@ -9,7 +9,7 @@ const MAX_PAGES=500, PAGES_PER_REFRESH=3, MAX_IMPRESSIONS=350, $=id=>document.ge
 const state={
  library:[],watchlist:[],feedback:[],impressions:[],profile:null,candidates:[],mode:'balanced',
  filters:{title:'',genre:'any',excludeGenre:'any',yearFrom:'any',yearTo:'any',rating:'0',votes:'0',runtimeMin:'0',runtimeMax:'0',language:'any',focusAspect:'any',avoidAspect:'any',focusTheme:'any',sort:'fit'},
- loadToken:0,toastTimer:null,trailerRequestId:0,activeAccountKey:null
+ loadToken:0,toastTimer:null,trailerRequestId:0,activeAccountKey:null,aiBusy:false
 };
 function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined&&text!==null)n.textContent=String(text);return n;}
 function readArray(key){try{const x=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(x)?x:[];}catch(_){return[];}}
@@ -19,6 +19,36 @@ function toast(message){const n=$('tl-toast');n.textContent=message;n.classList.
 function setTuneStatus(message,tone){
  const n=$('tl-tune-status');if(!n)return;n.textContent=message;
  n.classList.toggle('is-working',tone==='working');n.classList.toggle('is-ready',tone==='ready');n.classList.toggle('is-error',tone==='error');
+}
+function setAiStatus(message,tone){
+ const n=$('tl-ai-status');if(!n)return;n.textContent=message;
+ n.classList.toggle('is-working',tone==='working');n.classList.toggle('is-ready',tone==='ready');n.classList.toggle('is-error',tone==='error');
+}
+function updateAiButton(){
+ const button=$('tl-ai-rank');if(!button)return;
+ button.disabled=state.aiBusy||!state.library.length||!state.candidates.length;
+ button.title=!state.library.length?'Import Letterboxd ratings or reviews first.':!state.candidates.length?'Load recommendations before using AI.':'Use the selected AI provider to rank the current filtered candidates.';
+}
+function currentRankingContext(movies){return {profile:state.profile,library:state.library,candidates:(movies||[]).slice(0,18)};}
+async function improveWithAI(){
+ if(state.aiBusy)return;
+ if(!state.library.length){setAiStatus('Import Letterboxd ratings or reviews before personalizing with AI.','error');return;}
+ if(!state.candidates.length){setAiStatus('No current films are available to rank.','error');return;}
+ if(state.filters.sort!=='fit'){setAiStatus('Set Sort by to Best taste fit before applying AI ranking.','error');return;}
+ const deterministic=window.TasteRecommender.rank(state.candidates,{profile:state.profile,library:state.library,watchlist:state.watchlist,feedback:state.feedback,mode:state.mode,focusAspect:state.filters.focusAspect,avoidAspect:state.filters.avoidAspect,focusTheme:state.filters.focusTheme});
+ const filtered=applyFilters(deterministic),context=currentRankingContext(filtered);
+ if(!context.candidates.length){setAiStatus('No films match the current filters. Widen the filters first.','error');return;}
+ state.aiBusy=true;updateAiButton();setAiStatus('AI is comparing your taste and review patterns with the current films…','working');
+ try{
+  if(!window.TasteLabAI)throw new Error('The Taste Lab AI module did not load. Refresh the page and try again.');
+  const result=await window.TasteLabAI.rank(context);
+  render();
+  setAiStatus(result.cached?'Restored the AI ranking from this browser cache; no new API request was sent.':'AI ranking applied with '+result.provider+' ('+result.model+'). '+result.rankings.length+' candidate films were checked.','ready');
+  if(!result.cached)toast('AI ranking applied. Results are cached locally for this batch.');
+ }catch(error){
+  console.warn('[Taste Lab] AI ranking unavailable; keeping deterministic ranking:',error);
+  render();setAiStatus('AI could not rank this batch, so the local ranking remains. '+String(error&&error.message||'Provider request failed.').slice(0,220),'error');
+ }finally{state.aiBusy=false;updateAiButton();}
 }
 function accountStatus(){const a=window.FrameRateAuth;$('tl-account-status').textContent=a&&a.currentUser?(a.cloudReady?'SYNCED ACCOUNT':'SYNCING ACCOUNT'):(a&&a.configured?'GUEST PROFILE':'LOCAL PROFILE');}
 function currentAccountKey(){
@@ -287,7 +317,10 @@ function rememberImpressions(movies){
 function render(){
  const grid=$('tl-results-grid');
  const ranked=window.TasteRecommender.rank(state.candidates,{profile:state.profile,library:state.library,watchlist:state.watchlist,feedback:state.feedback,mode:state.mode,focusAspect:state.filters.focusAspect,avoidAspect:state.filters.avoidAspect,focusTheme:state.filters.focusTheme});
- const filtered=applyFilters(ranked),visible=filtered.slice(0,12);
+ const filtered=applyFilters(ranked),context=currentRankingContext(filtered);
+ const cachedAI=state.filters.sort==='fit'&&window.TasteLabAI?window.TasteLabAI.getCached(context):null;
+ const ordered=state.filters.sort==='fit'&&window.TasteLabAI?window.TasteLabAI.applyRanking(filtered,context,cachedAI):filtered;
+ const visible=ordered.slice(0,12);
  grid.replaceChildren();
  $('tl-results-count').textContent=visible.length?visible.length+' recommendations · '+(state.library.length?'personalized from your signals':'general discovery'):'No films match these filters';
  if(!visible.length){
@@ -398,10 +431,11 @@ async function load(options){
   console.error('[Taste Lab] Could not load recommendations:',error);
   const message=error&&error.message?error.message:'Something went wrong while loading Taste Lab.';
   const displayed=/failed to send a request to the edge function/i.test(message)?'The browser could not reach movie-data-proxy. Deploy the latest Supabase function, then check Supabase Logs if it continues.':message;setStatus(displayed,'error');setTuneStatus(displayed,'error');
- }finally{if(token===state.loadToken){$('tl-rebuild-profile').disabled=false;$('tl-refresh-recommendations').disabled=false;accountStatus();}}
+ }finally{if(token===state.loadToken){$('tl-rebuild-profile').disabled=false;$('tl-refresh-recommendations').disabled=false;accountStatus();updateAiButton();}}
 }
 function init(){
  $('tl-rebuild-profile').addEventListener('click',()=>load({forceProfile:true,refreshCandidates:true}));
+ const aiButton=$('tl-ai-rank');if(aiButton)aiButton.addEventListener('click',()=>void improveWithAI());
  $('tl-refresh-recommendations').addEventListener('click',()=>load({refreshCandidates:true}));
  document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{state.mode=b.dataset.mode||'balanced';updateModes();render();}));
  ['tl-title-filter','tl-genre-filter','tl-exclude-genre-filter','tl-year-from-filter','tl-year-to-filter','tl-rating-filter','tl-votes-filter','tl-runtime-min-filter','tl-runtime-max-filter','tl-original-language','tl-focus-aspect','tl-avoid-aspect','tl-focus-theme','tl-sort-filter'].forEach(id=>{
