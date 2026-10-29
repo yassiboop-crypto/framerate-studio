@@ -71,7 +71,7 @@ function addToWatchlist(m){
 }
 function readFilters(){
  try{const x=JSON.parse(localStorage.getItem(FILTER_KEY)||'{}');if(x&&typeof x==='object')state.filters=Object.assign(state.filters,x);}catch(_){}
- ['title','genre','decade','rating','language','sort'].forEach(key=>{const node=$('tl-'+(key==='title'?'title':key==='genre'?'genre':key==='decade'?'decade':key==='rating'?'rating':key==='language'?'original-language':'sort')+'-filter');if(node&&state.filters[key]!==undefined)node.value=state.filters[key];});
+ const ids={title:'tl-title-filter',genre:'tl-genre-filter',decade:'tl-decade-filter',rating:'tl-rating-filter',language:'tl-original-language',sort:'tl-sort-filter'};Object.entries(ids).forEach(([key,id])=>{const node=$(id);if(node&&state.filters[key]!==undefined)node.value=state.filters[key];});
 }
 function collectFilters(){
  state.filters={
