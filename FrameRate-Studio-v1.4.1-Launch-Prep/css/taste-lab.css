@@ -223,3 +223,8 @@ body.tl-modal-open{overflow:hidden}
  .tl-film-art{height:clamp(270px,78vw,340px);max-height:340px;aspect-ratio:auto!important}
  .tl-film-content{flex:1}
 }
+
+.tl-tune-status{margin:17px 0 0;padding:12px 14px;border:1px solid rgba(181,138,242,.18);border-radius:12px;background:rgba(181,138,242,.045);color:#ada5bb;font-size:11px;line-height:1.7}
+.tl-tune-status.is-working{border-color:rgba(255,189,105,.28);color:#ffd29a;background:rgba(255,189,105,.045)}
+.tl-tune-status.is-ready{border-color:rgba(0,224,84,.2);color:#9cdeb1;background:rgba(0,224,84,.035)}
+.tl-tune-status.is-error{border-color:rgba(255,120,120,.26);color:#ffb2b2;background:rgba(255,120,120,.04)}
