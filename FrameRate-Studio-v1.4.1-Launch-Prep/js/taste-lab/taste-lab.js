@@ -47,6 +47,12 @@ async function improveWithAI(){
  state.aiBusy=true;updateAiButton();setAiStatus(aiMessage('aiStatusWorking','AI is comparing your taste and review patterns with the current films…'),'working');
  try{
   if(!window.TasteLabAI)throw new Error('The Taste Lab AI module did not load. Refresh the page and try again.');
+  const auth=window.FrameRateAuth;
+  if(auth&&auth.currentUser&&auth.currentUser.id){
+   if(!auth.cloudReady)throw new Error('Your account is still syncing. Wait a moment, then try AI ranking again.');
+   const vaultReady=await auth.refreshCloudCredentials();
+   if(!vaultReady&&auth.credentialStatusError)throw new Error('Secure AI vault unavailable: '+auth.credentialStatusError);
+  }
   const result=await window.TasteLabAI.rank(context);
   const latestRanked=window.TasteRecommender.rank(state.candidates,{profile:state.profile,library:state.library,watchlist:state.watchlist,feedback:state.feedback,mode:state.mode,focusAspect:state.filters.focusAspect,avoidAspect:state.filters.avoidAspect,focusTheme:state.filters.focusTheme});
   const latestContext=currentRankingContext(applyFilters(latestRanked));
