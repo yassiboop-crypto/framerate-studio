@@ -20,6 +20,12 @@ function setTuneStatus(message,tone){
  const n=$('tl-tune-status');if(!n)return;n.textContent=message;
  n.classList.toggle('is-working',tone==='working');n.classList.toggle('is-ready',tone==='ready');n.classList.toggle('is-error',tone==='error');
 }
+function aiMessage(key,fallback,values){
+ const experience=window.TasteLabExperience||{},lang=String(read('fr_taste_language',read('fr_lang','en'))||'en');
+ const pack=Object.assign({},experience.translations&&experience.translations.en||{},experience.translations&&experience.translations[lang]||{},experience.additionalTranslations&&experience.additionalTranslations.en||{},experience.additionalTranslations&&experience.additionalTranslations[lang]||{});
+ let message=String(pack[key]||fallback||key);
+ Object.entries(values||{}).forEach(([name,value])=>{message=message.split('{'+name+'}').join(String(value));});return message;
+}
 function setAiStatus(message,tone){
  const n=$('tl-ai-status');if(!n)return;n.textContent=message;
  n.classList.toggle('is-working',tone==='working');n.classList.toggle('is-ready',tone==='ready');n.classList.toggle('is-error',tone==='error');
@@ -32,22 +38,27 @@ function updateAiButton(){
 function currentRankingContext(movies){return {profile:state.profile,library:state.library,candidates:(movies||[]).slice(0,18)};}
 async function improveWithAI(){
  if(state.aiBusy)return;
- if(!state.library.length){setAiStatus('Import Letterboxd ratings or reviews before personalizing with AI.','error');return;}
- if(!state.candidates.length){setAiStatus('No current films are available to rank.','error');return;}
- if(state.filters.sort!=='fit'){setAiStatus('Set Sort by to Best taste fit before applying AI ranking.','error');return;}
+ if(!state.library.length){setAiStatus(aiMessage('aiStatusLibrary','Import Letterboxd ratings or reviews before personalizing with AI.'),'error');return;}
+ if(!state.candidates.length){setAiStatus(aiMessage('aiStatusCandidates','No current films are available to rank.'),'error');return;}
+ if(state.filters.sort!=='fit'){setAiStatus(aiMessage('aiStatusSort','Set Sort by to Best taste fit before applying AI ranking.'),'error');return;}
  const deterministic=window.TasteRecommender.rank(state.candidates,{profile:state.profile,library:state.library,watchlist:state.watchlist,feedback:state.feedback,mode:state.mode,focusAspect:state.filters.focusAspect,avoidAspect:state.filters.avoidAspect,focusTheme:state.filters.focusTheme});
  const filtered=applyFilters(deterministic),context=currentRankingContext(filtered);
- if(!context.candidates.length){setAiStatus('No films match the current filters. Widen the filters first.','error');return;}
- state.aiBusy=true;updateAiButton();setAiStatus('AI is comparing your taste and review patterns with the current films…','working');
+ if(!context.candidates.length){setAiStatus(aiMessage('aiStatusNoMatches','No films match the current filters. Widen the filters first.'),'error');return;}
+ state.aiBusy=true;updateAiButton();setAiStatus(aiMessage('aiStatusWorking','AI is comparing your taste and review patterns with the current films…'),'working');
  try{
   if(!window.TasteLabAI)throw new Error('The Taste Lab AI module did not load. Refresh the page and try again.');
   const result=await window.TasteLabAI.rank(context);
   render();
-  setAiStatus(result.cached?'Restored the AI ranking from this browser cache; no new API request was sent.':'AI ranking applied with '+result.provider+' ('+result.model+'). '+result.rankings.length+' candidate films were checked.','ready');
+  setAiStatus(result.cached?aiMessage('aiStatusCached','Restored AI ranking from cache; no new request was sent.'):aiMessage('aiStatusDone','AI ranking applied.',{provider:result.provider,model:result.model,count:result.rankings.length}),'ready');
   if(!result.cached)toast('AI ranking applied. Results are cached locally for this batch.');
  }catch(error){
   console.warn('[Taste Lab] AI ranking unavailable; keeping deterministic ranking:',error);
-  render();setAiStatus('AI could not rank this batch, so the local ranking remains. '+String(error&&error.message||'Provider request failed.').slice(0,220),'error');
+  render();const detail=String(error&&error.message||'Provider request failed.');let message=aiMessage('aiStatusFallback','AI could not rank this batch, so the local ranking remains.');
+  if(/Choose Gemini|No API key is configured|selected AI provider/i.test(detail))message=aiMessage('aiStatusProvider','Configure an AI provider in the main Studio API Vault first.');
+  else if(/No current candidate films/i.test(detail))message=aiMessage('aiStatusCandidates','No current films are available to rank.');
+  else if(/No films match the current filters/i.test(detail))message=aiMessage('aiStatusNoMatches','No films match the current filters. Widen the filters first.');
+  else message+=' '+detail.slice(0,180);
+  setAiStatus(message,'error');
  }finally{state.aiBusy=false;updateAiButton();}
 }
 function accountStatus(){const a=window.FrameRateAuth;$('tl-account-status').textContent=a&&a.currentUser?(a.cloudReady?'SYNCED ACCOUNT':'SYNCING ACCOUNT'):(a&&a.configured?'GUEST PROFILE':'LOCAL PROFILE');}
