@@ -184,7 +184,7 @@ function posterImage(movie,art){
  art.appendChild(node);
 }
 function openFilmInStudio(m){
- const params=new URLSearchParams();params.set('frMovieId',String(m.id||''));params.set('frMovieTitle',String(m.title||''));params.set('frMovieYear',String(m.release_date||'').slice(0,4));
+ const params=new URLSearchParams();params.set('frMovieId',String(m.id||''));params.set('frMovieTitle',String(m.title||''));params.set('frMovieYear',String(m.release_date||'').slice(0,4));params.set('frMoviePoster',String(m.poster_path||''));
  window.location.href='index.html?'+params.toString();
 }
 function filmCard(m){
