@@ -49,7 +49,20 @@ function metrics(p){
  else if(p){n.textContent=p.confidence==='Developing a strong pattern'?'Pattern found':p.confidence==='Emerging pattern'?'Learning':'Early signals';s.textContent=p.ratedCount+' ratings · '+p.reviewCount+' reviews';}
  else{n.textContent='Analyzing';s.textContent='Building your profile';}
 }
+function renderFocusThemeOptions(p){
+ const select=$('tl-focus-theme');if(!select)return;
+ const desired=String(state.filters.focusTheme||'any');
+ select.replaceChildren(el('option','','Any theme'));
+ const weights=p&&p.themeWeights||{};
+ const themes=Object.entries(weights).map(([key,value])=>({key,label:String(key).replace(/_/g,' '),score:Number(value&&value.score)||0,count:Number(value&&value.count)||0}))
+  .sort((a,b)=>Math.abs(b.score)*Math.sqrt(b.count)-Math.abs(a.score)*Math.sqrt(a.count)).slice(0,30);
+ themes.forEach(theme=>select.appendChild(el('option','',theme.label.charAt(0).toUpperCase()+theme.label.slice(1))).value=theme.key);
+ if(desired!=='any'&&!themes.some(x=>x.key===desired))select.appendChild(el('option','',desired.replace(/_/g,' '))).value=desired;
+ select.value=desired==='any'||themes.some(x=>x.key===desired)?desired:'any';
+ state.filters.focusTheme=select.value;
+}
 function renderProfile(p){
+ renderFocusThemeOptions(p);
  const g=Object.entries(p&&p.genreWeights||{}).map(([id,x])=>({id,label:x.name||window.TasteProfileBuilder.genreNames[id]||'Film',score:Number(x.score)||0,count:Number(x.evidence)||0}));
  const good=g.filter(x=>x.score>=.1).sort((a,b)=>b.score*Math.sqrt(b.count)-a.score*Math.sqrt(a.count)).slice(0,5);
  const bad=g.filter(x=>x.score<=-.1).sort((a,b)=>a.score*Math.sqrt(a.count)-b.score*Math.sqrt(b.count)).slice(0,4);
@@ -291,7 +304,7 @@ function collectFilters(){
 }
 function resetFilters(){
  state.filters={title:'',genre:'any',excludeGenre:'any',yearFrom:'any',yearTo:'any',rating:'0',votes:'0',runtimeMin:'0',runtimeMax:'0',language:'any',focusAspect:'any',avoidAspect:'any',focusTheme:'any',sort:'fit'};
- const ids={title:'tl-title-filter',genre:'tl-genre-filter',excludeGenre:'tl-exclude-genre-filter',yearFrom:'tl-year-from-filter',yearTo:'tl-year-to-filter',rating:'tl-rating-filter',votes:'tl-votes-filter',runtimeMin:'tl-runtime-min-filter',runtimeMax:'tl-runtime-max-filter',language:'tl-original-language',sort:'tl-sort-filter'};
+ const ids={title:'tl-title-filter',genre:'tl-genre-filter',excludeGenre:'tl-exclude-genre-filter',yearFrom:'tl-year-from-filter',yearTo:'tl-year-to-filter',rating:'tl-rating-filter',votes:'tl-votes-filter',runtimeMin:'tl-runtime-min-filter',runtimeMax:'tl-runtime-max-filter',language:'tl-original-language',focusAspect:'tl-focus-aspect',avoidAspect:'tl-avoid-aspect',focusTheme:'tl-focus-theme',sort:'tl-sort-filter'};
  Object.entries(ids).forEach(([key,id])=>{const node=$(id);if(node)node.value=state.filters[key];});
  collectFilters();render();
 }
