@@ -159,7 +159,11 @@ async function callProviderChat(provider: Provider, key: string, body: any): Pro
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: system }] },
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature, maxOutputTokens: maxTokens },
+          generationConfig: {
+            temperature,
+            maxOutputTokens: maxTokens,
+            ...(body.responseFormat === 'json_object' ? { responseMimeType: 'application/json' } : {}),
+          },
         }),
       }, 45000,
     );
@@ -179,11 +183,13 @@ async function callProviderChat(provider: Provider, key: string, body: any): Pro
     headers['HTTP-Referer'] = siteUrl;
     headers['X-Title'] = 'FrameRate Studio';
   }
+  const responseFormat = body.responseFormat === 'json_object' ? { type: 'json_object' } : null;
   response = await timeoutFetch(endpoint, {
     method: 'POST', headers,
     body: JSON.stringify({
       model, messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }],
       temperature, max_tokens: maxTokens,
+      ...(responseFormat ? { response_format: responseFormat } : {}),
     }),
   }, 45000);
   if (!response.ok) throw new Error(`${provider} returned HTTP ${response.status}. Check the selected model and account quota.`);
