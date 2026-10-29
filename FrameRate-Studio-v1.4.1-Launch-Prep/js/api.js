@@ -1609,52 +1609,53 @@ Generate 3 distinct Letterboxd review styles in ${targetLanguage}:
     const chosenModel = (document.getElementById('studioQuickModelSelect')?.value || keys.model || 'auto-discover').trim();
 
     const sysInstruction = `You are an elite Letterboxd film critic writing in (${lang}).
-Output your 3 reviews using EXACTLY these three markers on their own lines:
+Produce THREE complete, distinct reviews about the supplied film and the user's notes. Never stop after the opening phrase.
+Output exactly these three markers on their own lines and put a complete review after each:
 ===V1===
-(Write Variation 1: Punchy 1-2 sentence Letterboxd one-liner here)
+A polished 1-2 sentence punchy Letterboxd one-liner.
 ===V2===
-(Write Variation 2: Authentic 1-2 paragraph personal diary review here)
+A natural personal diary review of 1-2 complete paragraphs.
 ===V3===
-(Write Variation 3: Deep 2-paragraph analytical cinephile critique here)
-Do not include any other markers or intro text.`;
+A substantive, two-paragraph cinephile critique of direction, form, themes, and the user's notes.
+Each section must contain real review text, not placeholder instructions. Do not repeat a section. Do not include an introduction or any other markers.`;
 
     const parseAiOutput = rawText => {
-      const cleaned = (rawText || '').replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+      const cleaned = String(rawText || '').replace(/<think>[\\s\\S]*?<\\/think>/gi, '').trim();
+      const isComplete = (v1, v2, v3) =>
+        String(v1 || '').trim().length >= 12 &&
+        String(v2 || '').trim().length >= 45 &&
+        String(v3 || '').trim().length >= 60;
 
-      if (cleaned.includes('===V1===') && cleaned.includes('===V2===')) {
+      if (cleaned.includes('===V1===') && cleaned.includes('===V2===') && cleaned.includes('===V3===')) {
         const p1 = cleaned.split('===V1===')[1] || '';
         const [v1Raw, rest1] = p1.split('===V2===');
         const [v2Raw, v3Raw] = (rest1 || '').split('===V3===');
-        if (v1Raw && v2Raw) {
-          return {
-            v1: v1Raw.trim(),
-            v2: v2Raw.trim(),
-            v3: (v3Raw || v2Raw).trim()
-          };
+        if (isComplete(v1Raw, v2Raw, v3Raw)) {
+          return { v1: v1Raw.trim(), v2: v2Raw.trim(), v3: v3Raw.trim() };
         }
       }
 
-      const noCode = cleaned.replace(/```json|```/g, '').trim();
+      const noCode = cleaned.replace(/` ` `json|` ` `/g, '').trim();
       const firstBrace = noCode.indexOf('{');
       const lastBrace = noCode.lastIndexOf('}');
-      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      if (firstBrace !== -1 && lastBrace > firstBrace) {
         try {
           const obj = JSON.parse(noCode.slice(firstBrace, lastBrace + 1));
           const v1 = obj.v1 || obj.variation1 || '';
           const v2 = obj.v2 || obj.variation2 || '';
           const v3 = obj.v3 || obj.variation3 || '';
-          if (v1 || v2) return { v1: String(v1), v2: String(v2), v3: String(v3 || v2) };
+          if (isComplete(v1, v2, v3)) {
+            return { v1: String(v1).trim(), v2: String(v2).trim(), v3: String(v3).trim() };
+          }
         } catch (e) {}
       }
 
-      const paras = cleaned.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+      const paras = cleaned.split(/\\n\\s*\\n/).map(p => p.trim()).filter(Boolean);
       if (paras.length >= 3) {
-        return { v1: paras[0], v2: paras[1], v3: paras.slice(2).join('\n\n') };
+        const v1 = paras[0], v2 = paras[1], v3 = paras.slice(2).join('\\n\\n');
+        if (isComplete(v1, v2, v3)) return { v1, v2, v3 };
       }
-      if (cleaned.length > 30) {
-        return { v1: cleaned.split('.')[0] + '.', v2: cleaned, v3: cleaned };
-      }
-      throw new Error('Empty response from model');
+      throw new Error('The model returned an incomplete review set. It did not finish all three variations; try again or choose another model.');
     };
 
     const fetchWithTimeout = async (url, options, timeoutMs = 15000) => {
@@ -1670,7 +1671,8 @@ Do not include any other markers or intro text.`;
     const callOpenAiCompatible = async (url, apiKey, model, provider) => {
       if (window.FrameRateAuth?.hasCloudCredential?.(provider)) {
         const response = await window.FrameRateAuth.invokeCredentialVault({
-          action: 'chat', provider, model, system: sysInstruction, prompt: promptText
+          action: 'chat', provider, model, system: sysInstruction, prompt: promptText,
+          maxTokens: 2600, temperature: 0.68
         });
         return parseAiOutput(response.text || '');
       }
@@ -1686,8 +1688,8 @@ Do not include any other markers or intro text.`;
             { role: 'system', content: sysInstruction },
             { role: 'user', content: promptText }
           ],
-          temperature: 0.78,
-          max_tokens: 1100
+          temperature: 0.68,
+          max_tokens: 2600
         })
       });
 
@@ -1703,7 +1705,8 @@ Do not include any other markers or intro text.`;
       const cleanModel = modelName.replace(/^models\//, '');
       if (window.FrameRateAuth?.hasCloudCredential?.('gemini')) {
         const response = await window.FrameRateAuth.invokeCredentialVault({
-          action: 'chat', provider: 'gemini', model: cleanModel, system: sysInstruction, prompt: promptText
+          action: 'chat', provider: 'gemini', model: cleanModel, system: sysInstruction, prompt: promptText,
+          maxTokens: 2600, temperature: 0.68
         });
         const parsed = parseAiOutput(response.text || '');
         return { ...parsed, _agentLabel: `Live: Gemini (${cleanModel})` };
@@ -1721,8 +1724,8 @@ Do not include any other markers or intro text.`;
             { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
           ],
           generationConfig: {
-            temperature: 0.8,
-            maxOutputTokens: 1100
+            temperature: 0.68,
+            maxOutputTokens: 2600
           }
         })
       });
@@ -1780,14 +1783,17 @@ Do not include any other markers or intro text.`;
 
     if (chosenModel === 'local-critic') {
       targetAgent = 'local';
+    } else if (keys.provider && keys.provider !== 'auto' &&
+               ['gemini', 'groq', 'openai', 'openrouter'].includes(keys.provider) &&
+               this.hasAvailableCredential(keys.provider)) {
+      // The provider selected in API Vault is authoritative. The quick model
+      // dropdown combines model lists, so a stale model must not route this
+      // request to a different provider.
+      targetAgent = keys.provider;
     } else if (chosenModel === 'auto-discover') {
-      targetAgent = keys.provider && keys.provider !== 'auto'
-        ? keys.provider
-        : this.resolveActiveProvider('auto');
+      targetAgent = this.resolveActiveProvider('auto');
     } else if (presetProvider) {
       targetAgent = presetProvider;
-    } else if (keys.provider && keys.provider !== 'auto') {
-      targetAgent = keys.provider;
     } else if (lowerModel.includes('gemini')) {
       targetAgent = 'gemini';
     } else if (lowerModel.includes('qwen') || lowerModel.includes('llama') || lowerModel.includes('gemma') || lowerModel.includes('mixtral') || lowerModel.includes('gpt-oss')) {
@@ -1800,6 +1806,25 @@ Do not include any other markers or intro text.`;
       targetAgent = this.resolveActiveProvider('auto');
     }
 
+    const modelIsCompatible = (provider, model) => {
+      const value = String(model || '').trim().toLowerCase();
+      if (!value || value === 'auto-discover' || value === 'local-critic') return false;
+      if (provider === 'gemini') return value.startsWith('gemini-');
+      if (provider === 'groq') return /^(qwen\\/|openai\\/|meta-llama\\/|llama-)/i.test(value);
+      if (provider === 'openai') return value.startsWith('gpt-');
+      if (provider === 'openrouter') return value.includes('/');
+      return false;
+    };
+    const modelForProvider = (provider, fallback) => {
+      if (modelIsCompatible(provider, chosenModel)) return chosenModel;
+      const storedModel = String(keys.model || '').trim();
+      if (modelIsCompatible(provider, storedModel)) return storedModel;
+      const firstProviderModel = (this.modelPresets[provider] || []).find(item =>
+        item.id && item.id !== 'auto-discover' && item.id !== 'local-critic' && modelIsCompatible(provider, item.id)
+      );
+      return firstProviderModel ? firstProviderModel.id : fallback;
+    };
+
     try {
       if (targetAgent === 'gemini') {
         if (!this.hasAvailableCredential('gemini')) throw new Error('Gemini API Key is empty in API Vault');
@@ -1807,9 +1832,7 @@ Do not include any other markers or intro text.`;
       }
       if (targetAgent === 'groq') {
         if (!this.hasAvailableCredential('groq')) throw new Error('Groq API Key is empty in API Vault');
-        const preferredModel = (chosenModel && chosenModel !== 'auto-discover' && chosenModel !== 'local-critic')
-          ? chosenModel
-          : 'qwen/qwen3.8-27b';
+        const preferredModel = modelForProvider('groq', 'qwen/qwen3.8-27b');
         const candidates = [...new Set([preferredModel, 'qwen/qwen3.8-27b', 'openai/gpt-oss-120b', 'openai/gpt-oss-20b'])];
         let firstGroqError = null;
         for (const model of candidates) {
@@ -1824,13 +1847,13 @@ Do not include any other markers or intro text.`;
       }
       if (targetAgent === 'openai') {
         if (!this.hasAvailableCredential('openai')) throw new Error('OpenAI API Key is empty in API Vault');
-        const m = lowerModel.startsWith('gpt-') ? chosenModel : 'gpt-4o-mini';
+        const m = modelForProvider('openai', 'gpt-4o-mini');
         const out = await callOpenAiCompatible('https://api.openai.com/v1/chat/completions', keys.openai, m, 'openai');
         return { ...out, _agentLabel: `Live: OpenAI (${m})` };
       }
       if (targetAgent === 'openrouter') {
         if (!this.hasAvailableCredential('openrouter')) throw new Error('OpenRouter API Key is empty in API Vault');
-        const m = lowerModel.includes('/') ? chosenModel : 'google/gemini-2.5-flash:free';
+        const m = modelForProvider('openrouter', 'google/gemini-2.5-flash:free');
         const out = await callOpenAiCompatible('https://openrouter.ai/api/v1/chat/completions', keys.openrouter, m, 'openrouter');
         return { ...out, _agentLabel: `Live: OpenRouter (${m})` };
       }
