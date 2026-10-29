@@ -274,3 +274,14 @@ body.tl-modal-open{overflow:hidden}
  .tl-trailer-circle,.tl-add-cinema,.tl-add-cinema>svg{animation:none!important;transition:none!important}
  .tl-film-art:hover .tl-trailer-circle{animation:none!important}
 }
+
+/* Keep poster artwork uncropped even during card hover; only backdrop fallbacks may zoom. */
+.tl-film-card:hover .tl-film-poster:not(.tl-film-poster-backdrop){transform:none!important;opacity:1!important}
+.tl-film-poster-backdrop{object-fit:cover!important}
+.tl-film-actions .tl-feedback-button svg{transition:transform .18s ease,opacity .18s ease}
+.tl-film-actions .tl-feedback-button:hover svg{transform:translateY(-1px) scale(1.08)}
+.tl-film-actions .tl-feedback-button.is-primary:hover svg{transform:rotate(90deg) scale(1.04)}
+.tl-film-actions .tl-feedback-button.is-added:hover svg{transform:none}
+.tl-film-art-badge svg{color:#e5d2ff}
+.tl-film-votes{color:#91a0ad}
+@media(prefers-reduced-motion:reduce){.tl-film-actions .tl-feedback-button svg{transition:none!important}}
