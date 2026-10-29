@@ -32,6 +32,7 @@
     'fr_taste_impressions_v1',
     'fr_taste_catalogue_cursor_v1',
     'fr_taste_current_batch_v1',
+    'fr_taste_ai_rank_v1',
     'fr_ai_provider',
     'fr_ai_model',
     'fr_key_tmdb',
