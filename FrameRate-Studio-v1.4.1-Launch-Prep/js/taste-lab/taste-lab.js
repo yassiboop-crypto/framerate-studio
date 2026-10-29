@@ -48,9 +48,15 @@ async function improveWithAI(){
  try{
   if(!window.TasteLabAI)throw new Error('The Taste Lab AI module did not load. Refresh the page and try again.');
   const result=await window.TasteLabAI.rank(context);
+  const latestRanked=window.TasteRecommender.rank(state.candidates,{profile:state.profile,library:state.library,watchlist:state.watchlist,feedback:state.feedback,mode:state.mode,focusAspect:state.filters.focusAspect,avoidAspect:state.filters.avoidAspect,focusTheme:state.filters.focusTheme});
+  const latestContext=currentRankingContext(applyFilters(latestRanked));
+  const matchingCache=state.filters.sort==='fit'?window.TasteLabAI.getCached(latestContext):null;
   render();
-  setAiStatus(result.cached?aiMessage('aiStatusCached','Restored AI ranking from cache; no new request was sent.'):aiMessage('aiStatusDone','AI ranking applied.',{provider:result.provider,model:result.model,count:result.rankings.length}),'ready');
-  if(!result.cached)toast('AI ranking applied. Results are cached locally for this batch.');
+  if(!matchingCache||matchingCache.cacheKey!==result.cacheKey){setAiStatus(aiMessage('aiStatusStale','Filters changed during the AI request; the current list keeps its local ranking.'),'warning');}
+  else{
+   setAiStatus(result.cached?aiMessage('aiStatusCached','Restored AI ranking from cache; no new request was sent.'):aiMessage('aiStatusDone','AI ranking applied.',{provider:result.provider,model:result.model,count:result.rankings.length}),'ready');
+   if(!result.cached)toast('AI ranking applied. Results are cached locally for this batch.');
+  }
  }catch(error){
   console.warn('[Taste Lab] AI ranking unavailable; keeping deterministic ranking:',error);
   render();const detail=String(error&&error.message||'Provider request failed.');let message=aiMessage('aiStatusFallback','AI could not rank this batch, so the local ranking remains.');
