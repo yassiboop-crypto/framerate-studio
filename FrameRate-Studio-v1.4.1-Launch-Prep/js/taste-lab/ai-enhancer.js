@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 const CACHE_KEY='fr_taste_ai_rank_v1';
-const LIMIT=18;
+const LIMIT=18,REVIEW_LIMIT=12;
 const PROVIDERS=['gemini','groq','openai','openrouter'];
 const DEFAULT_MODELS={gemini:'gemini-2.5-flash',groq:'qwen/qwen3.8-27b',openai:'gpt-4o-mini',openrouter:'google/gemini-2.5-flash:free'};
 const API_URLS={groq:'https://api.groq.com/openai/v1/chat/completions',openai:'https://api.openai.com/v1/chat/completions',openrouter:'https://openrouter.ai/api/v1/chat/completions'};
@@ -29,13 +29,13 @@ function cleanText(value,max){return String(value||'').replace(/\s+/g,' ').trim(
 function yearOf(row){return String(row&&(row.year||row.release_date)||'').slice(0,4);}
 function reviewSamples(rows){
  const all=(Array.isArray(rows)?rows:[]).filter(x=>x&&x.title).map(x=>({title:cleanText(x.title,120),year:yearOf(x),rating:Number(x.rating)||0,liked:Boolean(x.liked),review:cleanText(x.review,460),tags:Array.isArray(x.tags)?x.tags.slice(0,5).map(t=>cleanText(t,45)):[],key:cleanText(x.title,120).toLowerCase()+'|'+yearOf(x)}));
- const picked=[],seen=new Set();const add=x=>{if(x&&!seen.has(x.key)&&picked.length<LIMIT){seen.add(x.key);picked.push(x);}};
+ const picked=[],seen=new Set();const add=x=>{if(x&&!seen.has(x.key)&&picked.length<REVIEW_LIMIT){seen.add(x.key);picked.push(x);}};
  const withReview=all.filter(x=>x.review.length>18);
  withReview.filter(x=>x.rating>=4||x.liked).sort((a,b)=>b.rating-a.rating).slice(0,7).forEach(add);
  withReview.filter(x=>x.rating>0&&x.rating<=2.5&&!x.liked).sort((a,b)=>a.rating-b.rating).slice(0,5).forEach(add);
  withReview.sort((a,b)=>b.review.length-a.review.length).forEach(add);
  if(picked.length<8)all.filter(x=>x.rating>0).sort((a,b)=>b.rating-a.rating).forEach(add);
- return picked.slice(0,LIMIT).map(x=>({title:x.title,year:x.year,rating:x.rating,liked:x.liked,review:x.review,tags:x.tags}));
+ return picked.slice(0,REVIEW_LIMIT).map(x=>({title:x.title,year:x.year,rating:x.rating,liked:x.liked,review:x.review,tags:x.tags}));
 }
 function profileSummary(profile){
  const p=profile||{};
