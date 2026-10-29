@@ -1017,6 +1017,7 @@
           this.cloudReady = false;
           this.credentialStatus = {};
           this.credentialStatusError = '';
+          this.guestCredentialMigrationPromptedFor = null;
           this.lastSyncAt = null;
           this.refreshApplicationFromStorage();
         } finally {
