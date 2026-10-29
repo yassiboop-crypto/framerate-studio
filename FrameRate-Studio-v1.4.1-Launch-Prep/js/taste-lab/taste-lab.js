@@ -290,7 +290,9 @@ function filmCard(m){
  body.appendChild(meta);
  body.appendChild(el('p','tl-film-overview',m.overview||'No synopsis is available for this title yet.'));
  const reason=el('p','tl-film-reason');
- reason.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2ZM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16Z" fill="currentColor"/></svg><span>'+((m._tasteReasons||['A new film to explore.']).join(' '))+'</span>';
+ reason.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2ZM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16Z" fill="currentColor"/></svg><span></span>';
+ const reasonText=reason.querySelector('span');
+ if(reasonText)reasonText.textContent=(m._tasteReasons||['A new film to explore.']).join(' ');
  body.appendChild(reason);
  const genreChips=el('div','tl-film-genres');
  (m._tasteGenres||[]).slice(0,3).forEach(x=>genreChips.appendChild(el('span','tl-film-genre',x)));
