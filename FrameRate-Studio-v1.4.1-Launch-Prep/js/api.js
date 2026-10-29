@@ -1620,7 +1620,7 @@ A substantive, two-paragraph cinephile critique of direction, form, themes, and 
 Each section must contain real review text, not placeholder instructions. Do not repeat a section. Do not include an introduction or any other markers.`;
 
     const parseAiOutput = rawText => {
-      const cleaned = String(rawText || '').replace(/<think>[\\s\\S]*?<\\/think>/gi, '').trim();
+      const cleaned = String(rawText || '').replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
       const isComplete = (v1, v2, v3) =>
         String(v1 || '').trim().length >= 12 &&
         String(v2 || '').trim().length >= 45 &&
@@ -1635,7 +1635,7 @@ Each section must contain real review text, not placeholder instructions. Do not
         }
       }
 
-      const noCode = cleaned.replace(/` ` `json|` ` `/g, '').trim();
+      const noCode = cleaned.replace(/```json|```/g, '').trim();
       const firstBrace = noCode.indexOf('{');
       const lastBrace = noCode.lastIndexOf('}');
       if (firstBrace !== -1 && lastBrace > firstBrace) {
@@ -1650,9 +1650,9 @@ Each section must contain real review text, not placeholder instructions. Do not
         } catch (e) {}
       }
 
-      const paras = cleaned.split(/\\n\\s*\\n/).map(p => p.trim()).filter(Boolean);
+      const paras = cleaned.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
       if (paras.length >= 3) {
-        const v1 = paras[0], v2 = paras[1], v3 = paras.slice(2).join('\\n\\n');
+        const v1 = paras[0], v2 = paras[1], v3 = paras.slice(2).join('\n\n');
         if (isComplete(v1, v2, v3)) return { v1, v2, v3 };
       }
       throw new Error('The model returned an incomplete review set. It did not finish all three variations; try again or choose another model.');
@@ -1810,7 +1810,7 @@ Each section must contain real review text, not placeholder instructions. Do not
       const value = String(model || '').trim().toLowerCase();
       if (!value || value === 'auto-discover' || value === 'local-critic') return false;
       if (provider === 'gemini') return value.startsWith('gemini-');
-      if (provider === 'groq') return /^(qwen\\/|openai\\/|meta-llama\\/|llama-)/i.test(value);
+      if (provider === 'groq') return /^(qwen\/|openai\/|meta-llama\/|llama-)/i.test(value);
       if (provider === 'openai') return value.startsWith('gpt-');
       if (provider === 'openrouter') return value.includes('/');
       return false;
