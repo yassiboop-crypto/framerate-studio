@@ -60,7 +60,7 @@ function metrics(p){
 function renderFocusThemeOptions(p){
  const select=$('tl-focus-theme');if(!select)return;
  const desired=String(state.filters.focusTheme||'any');
- const lang=(localStorage.getItem('fr_lang')||localStorage.getItem('fr_taste_language')||'en');const langPack=window.TasteLabExperience&&window.TasteLabExperience.translations&&window.TasteLabExperience.translations[lang];select.replaceChildren(el('option','',langPack&&langPack.anyTheme?langPack.anyTheme:'Any theme'));
+ const lang=(localStorage.getItem('fr_lang')||localStorage.getItem('fr_taste_language')||'en');const langPack=window.TasteLabExperience&&window.TasteLabExperience.translations&&window.TasteLabExperience.translations[lang];const anyOption=el('option','',langPack&&langPack.anyTheme?langPack.anyTheme:'Any theme');anyOption.value='any';select.replaceChildren(anyOption);
  const weights=p&&p.themeWeights||{};
  const themes=Object.entries(weights).map(([key,value])=>({key,label:String(key).replace(/_/g,' '),score:Number(value&&value.score)||0,count:Number(value&&value.count)||0}))
   .sort((a,b)=>Math.abs(b.score)*Math.sqrt(b.count)-Math.abs(a.score)*Math.sqrt(a.count)).slice(0,30);
