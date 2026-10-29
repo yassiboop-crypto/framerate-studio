@@ -4,11 +4,12 @@ const FEEDBACK_KEY='fr_taste_feedback_v1';
 const FILTER_KEY='fr_taste_filters_v1';
 const IMPRESSIONS_KEY='fr_taste_impressions_v1';
 const CURSOR_KEY='fr_taste_catalogue_cursor_v1';
+const CURRENT_BATCH_KEY='fr_taste_current_batch_v1';
 const MAX_PAGES=500, PAGES_PER_REFRESH=3, MAX_IMPRESSIONS=350, $=id=>document.getElementById(id);
 const state={
  library:[],watchlist:[],feedback:[],impressions:[],profile:null,candidates:[],mode:'balanced',
  filters:{title:'',genre:'any',excludeGenre:'any',yearFrom:'any',yearTo:'any',rating:'0',votes:'0',runtimeMin:'0',runtimeMax:'0',language:'any',sort:'fit'},
- loadToken:0,toastTimer:null
+ loadToken:0,toastTimer:null,trailerRequestId:0
 };
 function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined&&text!==null)n.textContent=String(text);return n;}
 function readArray(key){try{const x=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(x)?x:[];}catch(_){return[];}}
@@ -146,20 +147,31 @@ function posterImage(movie,art){
  };
  art.appendChild(node);
 }
+function openFilmInStudio(m){
+ const params=new URLSearchParams();params.set('frMovieId',String(m.id||''));params.set('frMovieTitle',String(m.title||''));params.set('frMovieYear',String(m.release_date||'').slice(0,4));
+ window.location.href='index.html?'+params.toString();
+}
 function filmCard(m){
  const card=el('article','tl-film-card'),art=el('div','tl-film-art');posterImage(m,art);
+ art.setAttribute('role','link');art.setAttribute('tabindex','0');art.setAttribute('aria-label','Open '+m.title+' in FrameRate Studio');
+ art.addEventListener('click',()=>openFilmInStudio(m));
+ art.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openFilmInStudio(m);}});
  art.appendChild(el('span','tl-film-art-badge','◈ '+m._tasteFit+' FIT'));
  art.appendChild(el('span','tl-film-year-badge',String(m.release_date||'').slice(0,4)||'—'));card.appendChild(art);
- const body=el('div','tl-film-content');body.appendChild(el('h3','tl-film-title',m.title));
+ const body=el('div','tl-film-content');const title=el('button','tl-film-title tl-film-title-link',m.title);title.type='button';title.addEventListener('click',()=>openFilmInStudio(m));body.appendChild(title);
  const meta=el('div','tl-film-meta');meta.appendChild(el('span','tl-film-rating','★ '+(Number(m.vote_average)?Number(m.vote_average).toFixed(1):'—')+' / 10 TMDB'));
  if(Number(m.vote_count)>0)meta.appendChild(el('span','',Number(m.vote_count).toLocaleString()+' votes'));
  body.appendChild(meta);body.appendChild(el('p','tl-film-overview',m.overview||'No synopsis is available for this title yet.'));
  const reason=el('p','tl-film-reason');reason.appendChild(el('span','','✦'));reason.appendChild(el('span','',(m._tasteReasons||['A new film to explore.']).join(' ')));body.appendChild(reason);
  const genreChips=el('div','tl-film-genres');(m._tasteGenres||[]).slice(0,3).forEach(x=>genreChips.appendChild(el('span','tl-film-genre',x)));if(genreChips.childElementCount)body.appendChild(genreChips);
  const actions=el('div','tl-film-actions');
- const add=el('button','tl-feedback-button is-primary','＋ Add to My Cinema');add.type='button';add.addEventListener('click',()=>addToWatchlist(m));actions.appendChild(add);
+ const add=el('button','tl-feedback-button is-primary tl-add-cinema','＋ Add to My Cinema');add.type='button';add.addEventListener('click',()=>addToWatchlist(m,add));actions.appendChild(add);
  [['more-like-this','More like this','tl-feedback-button'],['not-for-me','Not for me','tl-feedback-button is-danger'],['already-watched','Already watched','tl-feedback-button']].forEach(([action,label,cls])=>{const b=el('button',cls,label);b.type='button';b.addEventListener('click',()=>saveFeedback(m,action));actions.appendChild(b);});
- body.appendChild(actions);card.appendChild(body);return card;
+ body.appendChild(actions);
+ const row=el('div','tl-film-trailer-row'),trailer=el('button','tl-trailer-circle','');trailer.type='button';trailer.title='Watch trailer';trailer.setAttribute('aria-label','Watch trailer for '+m.title);
+ trailer.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13L19 12 8 5.5Z" fill="currentColor"/></svg><span>Trailer</span>';
+ trailer.addEventListener('click',()=>openTasteTrailer(m));row.appendChild(trailer);body.appendChild(row);
+ card.appendChild(body);return card;
 }
 function applyFilters(ranked){
  const f=state.filters;
@@ -205,19 +217,41 @@ function render(){
  }
  visible.forEach(m=>grid.appendChild(filmCard(m)));
  rememberImpressions(visible);
+ safeStore(CURRENT_BATCH_KEY,state.candidates);
 }
-function addToWatchlist(m){
+function addToWatchlist(m,button){
  const year=String(m.release_date||'').slice(0,4),title=String(m.title||'').trim();
  if(!title){toast('This film has no usable title yet.');return;}
  const key=title.toLocaleLowerCase()+'|'+year,list=readArray('fr_watchlist');
- if(list.some(x=>String(x.title||'').trim().toLocaleLowerCase()+'|'+String(x.year||'').trim()===key)){toast('This film is already in My Cinema.');return;}
+ if(list.some(x=>String(x.title||'').trim().toLocaleLowerCase()+'|'+String(x.year||'').trim()===key)){
+  if(button){button.classList.add('is-added');button.textContent='✓ Already in My Cinema';button.disabled=true;}toast('This film is already in My Cinema.');return;
+ }
  const poster=m.poster_path?('https://image.tmdb.org/t/p/w500'+(String(m.poster_path).startsWith('/')?m.poster_path:'/'+m.poster_path)):'';
  const backdrop=m.backdrop_path?('https://image.tmdb.org/t/p/original'+(String(m.backdrop_path).startsWith('/')?m.backdrop_path:'/'+m.backdrop_path)):poster;
  const entry={id:'tmdb:'+String(m.id||key),title:title.slice(0,240),year,poster,backdrop,source:'tmdb',status:'want_to_watch',addedAt:new Date().toISOString().slice(0,10),updatedAt:new Date().toISOString()};
  const next=[entry,...list.filter(x=>String(x.title||'').trim().toLocaleLowerCase()+'|'+String(x.year||'').trim()!==key)].slice(0,1000);
- try{localStorage.setItem('fr_watchlist',JSON.stringify(next));let events={};try{const parsed=JSON.parse(localStorage.getItem('fr_watchlist_events')||'{}');if(parsed&&typeof parsed==='object'&&!Array.isArray(parsed))events=parsed;}catch(_){}events[key]={action:'add',updatedAt:new Date().toISOString()};const pairs=Object.entries(events);if(pairs.length>2000)events=Object.fromEntries(pairs.slice(-2000));localStorage.setItem('fr_watchlist_events',JSON.stringify(events));state.watchlist=next;renderProfile(state.profile||{});render();toast('Added to My Cinema · Want to Watch.');}
- catch(error){console.warn('[Taste Lab] Could not add film to My Cinema:',error);toast('Could not save to My Cinema. Browser storage may be full.');}
+ try{
+  localStorage.setItem('fr_watchlist',JSON.stringify(next));
+  let events={};try{const parsed=JSON.parse(localStorage.getItem('fr_watchlist_events')||'{}');if(parsed&&typeof parsed==='object'&&!Array.isArray(parsed))events=parsed;}catch(_){}
+  events[key]={action:'add',updatedAt:new Date().toISOString()};const pairs=Object.entries(events);if(pairs.length>2000)events=Object.fromEntries(pairs.slice(-2000));localStorage.setItem('fr_watchlist_events',JSON.stringify(events));
+  state.watchlist=next;
+  if(button){button.classList.remove('is-primary');button.classList.add('is-added');button.textContent='✓ Added to My Cinema';button.disabled=true;button.setAttribute('aria-label',title+' added to My Cinema');if(button.animate)button.animate([{transform:'scale(1)',boxShadow:'0 0 0 0 rgba(181,138,242,0)'},{transform:'scale(1.04)',boxShadow:'0 0 0 7px rgba(181,138,242,.14)'},{transform:'scale(1)',boxShadow:'0 0 0 0 rgba(181,138,242,0)'}],{duration:420,easing:'cubic-bezier(.2,.8,.2,1)'});}
+  renderProfile(state.profile||{});toast('Added to My Cinema · Want to Watch.');
+ }catch(error){console.warn('[Taste Lab] Could not add film to My Cinema:',error);toast('Could not save to My Cinema. Browser storage may be full.');}
 }
+async function openTasteTrailer(movie){
+ const modal=$('tl-trailer-modal'),frame=$('tl-trailer-frame'),title=$('tl-trailer-title'),notice=$('tl-trailer-notice'),external=$('tl-trailer-youtube');
+ if(!modal||!frame||!title||!notice)return;
+ const requestId=++state.trailerRequestId;title.textContent=(movie.title||'Film')+' — Trailer';notice.textContent='Finding an official trailer…';notice.classList.remove('tl-hidden');frame.classList.add('tl-hidden');frame.src='about:blank';external.classList.add('tl-hidden');modal.classList.remove('tl-hidden');document.body.classList.add('tl-modal-open');
+ try{
+  const details=await proxy('details',{id:movie.id});if(requestId!==state.trailerRequestId)return;
+  const videos=details&&details.videos&&Array.isArray(details.videos.results)?details.videos.results:[];
+  const chosen=videos.filter(v=>v&&v.site==='YouTube'&&/^[A-Za-z0-9_-]{6,20}$/.test(String(v.key||''))&&['Trailer','Teaser'].includes(String(v.type||''))).sort((a,b)=>Number(b.type==='Trailer')-Number(a.type==='Trailer')||Number(Boolean(b.official))-Number(Boolean(a.official)))[0];
+  if(chosen){frame.src='https://www.youtube-nocookie.com/embed/'+encodeURIComponent(chosen.key)+'?autoplay=1&rel=0';frame.classList.remove('tl-hidden');notice.classList.add('tl-hidden');external.href='https://www.youtube.com/watch?v='+encodeURIComponent(chosen.key);external.classList.remove('tl-hidden');}
+  else{notice.textContent='No embedded trailer was found for this film. You can search YouTube without leaving this page.';external.href='https://www.youtube.com/results?search_query='+encodeURIComponent((movie.title||'')+' '+String(movie.release_date||'').slice(0,4)+' official trailer');external.textContent='Search YouTube ↗';external.classList.remove('tl-hidden');}
+ }catch(_){if(requestId!==state.trailerRequestId)return;notice.textContent='The trailer service could not be reached. You can still search YouTube for this film.';external.href='https://www.youtube.com/results?search_query='+encodeURIComponent((movie.title||'')+' official trailer');external.textContent='Search YouTube ↗';external.classList.remove('tl-hidden');}
+}
+function closeTasteTrailer(){state.trailerRequestId++;const modal=$('tl-trailer-modal'),frame=$('tl-trailer-frame');if(frame)frame.src='about:blank';if(modal)modal.classList.add('tl-hidden');document.body.classList.remove('tl-modal-open');}
 function readFilters(){
  try{const x=JSON.parse(localStorage.getItem(FILTER_KEY)||'{}');if(x&&typeof x==='object')state.filters=Object.assign(state.filters,x);}catch(_){}
  const ids={title:'tl-title-filter',genre:'tl-genre-filter',excludeGenre:'tl-exclude-genre-filter',yearFrom:'tl-year-from-filter',yearTo:'tl-year-to-filter',rating:'tl-rating-filter',votes:'tl-votes-filter',runtimeMin:'tl-runtime-min-filter',runtimeMax:'tl-runtime-max-filter',language:'tl-original-language',sort:'tl-sort-filter'};
@@ -246,7 +280,7 @@ function saveFeedback(m,action){
  renderProfile(state.profile||{});render();toast(action==='more-like-this'?'Saved. Related genres get a small boost.':action==='not-for-me'?'Saved. This film will be hidden from discovery.':'Saved. This film will be excluded from discovery.');
 }
 async function load(options){
- const o=options||{},token=++state.loadToken,rebuild=Boolean(o.forceProfile),refresh=Boolean(o.refreshCandidates)||!state.candidates.length;
+ const o=options||{},token=++state.loadToken,rebuild=Boolean(o.forceProfile),refresh=Boolean(o.refreshCandidates);
  $('tl-rebuild-profile').disabled=true;$('tl-refresh-recommendations').disabled=true;
  setStatus(rebuild?'Re-reading ratings and reviews, then rebuilding the profile…':'Reading your account library and preparing recommendations…');
  try{
@@ -260,7 +294,10 @@ async function load(options){
   renderProfile(state.profile);$('tl-import-note').classList.toggle('tl-hidden',state.library.length>0);
   if(refresh){
    setStatus(state.library.length?'Searching a fresh catalogue batch against your taste signals…':'Loading a new catalogue batch. Import history to personalize it…');
-   state.candidates=await fetchCandidateBatch();
+   state.candidates=await fetchCandidateBatch();safeStore(CURRENT_BATCH_KEY,state.candidates);
+  }else if(!state.candidates.length){
+   state.candidates=readArray(CURRENT_BATCH_KEY);
+   if(!state.candidates.length){setStatus('Preparing the first recommendation batch…');state.candidates=await fetchCandidateBatch();safeStore(CURRENT_BATCH_KEY,state.candidates);}
   }
   if(token!==state.loadToken)return;
   render();
@@ -290,10 +327,10 @@ function init(){
   state.feedback=[];safeStore(FEEDBACK_KEY,state.feedback);renderProfile(state.profile||{});void load({refreshCandidates:false});toast('Discovery feedback reset.');
  });
  updateModes();readFilters();
- window.addEventListener('frameratedataready',()=>{accountStatus();void load({refreshCandidates:!state.candidates.length});});
- window.addEventListener('storage',e=>{if(['fr_lb_zip_library','fr_watchlist',FEEDBACK_KEY,FILTER_KEY,IMPRESSIONS_KEY].includes(e.key))void load({refreshCandidates:false});});
- if(!window.FrameRateAuth||!window.FrameRateAuth.configured)void load({refreshCandidates:true});
- setTimeout(()=>{if(state.loadToken===0)void load({refreshCandidates:true});},5500);
+ window.addEventListener('frameratedataready',()=>{accountStatus();void load({refreshCandidates:false});});
+ window.addEventListener('storage',e=>{if(['fr_lb_zip_library','fr_watchlist',FEEDBACK_KEY,FILTER_KEY,IMPRESSIONS_KEY,CURRENT_BATCH_KEY].includes(e.key))void load({refreshCandidates:false});});
+ void load({refreshCandidates:false});
+ setTimeout(()=>{if(state.loadToken===0)void load({refreshCandidates:false});},5500);
 }
 document.addEventListener('DOMContentLoaded',init);
 })();
