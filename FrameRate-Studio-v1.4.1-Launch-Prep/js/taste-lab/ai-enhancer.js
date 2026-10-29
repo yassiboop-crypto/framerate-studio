@@ -59,7 +59,7 @@ async function providerText(config,prompt){
  const auth=window.FrameRateAuth;
  if(auth&&auth.hasCloudCredential&&auth.hasCloudCredential(config.provider)){
   if(typeof auth.invokeCredentialVault!=='function')throw new Error('The secure AI vault is not available in this page.');
-  const response=await auth.invokeCredentialVault({action:'chat',provider:config.provider,model:config.model,system:SYSTEM,prompt}),text=String(response&&response.text||'').trim();
+  const response=await auth.invokeCredentialVault({action:'chat',provider:config.provider,model:config.model,system:SYSTEM,prompt,maxTokens:2200,temperature:0.15}),text=String(response&&response.text||'').trim();
   if(!text)throw new Error('The AI provider returned an empty response.');return text;
  }
  const key=localKey(config.provider);if(!key)throw new Error('No API key is configured for the selected AI provider.');
