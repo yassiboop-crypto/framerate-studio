@@ -282,7 +282,8 @@ function init(){
   const node=$(id);if(!node)return;node.addEventListener(id==='tl-title-filter'?'input':'change',()=>{collectFilters();render();});
  });
  $('tl-reset-filters').addEventListener('click',()=>{resetFilters();void load({refreshCandidates:true});});
- $('tl-tune-discover').addEventListener('click',()=>{collectFilters();if(window.TasteLabExperience)window.TasteLabExperience.setStep('discover');void load({refreshCandidates:true});});
+ const runDiscovery=()=>{collectFilters();if(window.TasteLabExperience)window.TasteLabExperience.setStep('discover');void load({refreshCandidates:true});};
+ ['tl-tune-discover','tl-tune-discover-bottom'].forEach(id=>{const button=$(id);if(button)button.addEventListener('click',runDiscovery);});
  $('tl-reset-feedback').addEventListener('click',()=>{
   if(!state.feedback.length){toast('There is no discovery feedback to reset yet.');return;}
   if(!window.confirm('Reset Taste Lab feedback for this browser profile? Your imported film history will stay untouched.'))return;
