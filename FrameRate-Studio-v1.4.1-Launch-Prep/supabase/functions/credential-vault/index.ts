@@ -13,6 +13,7 @@ type CredentialMap = Partial<Record<Provider, string>>;
 function allowedOrigins(): string[] {
   const defaults = [
     'https://framerate-studio.netlify.app',
+    'https://framerate-studio.ybenlahcen7.workers.dev',
     'http://localhost:8000',
     'http://127.0.0.1:8000',
   ];
