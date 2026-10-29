@@ -217,7 +217,7 @@ function filmCard(m){
   if(e.key==='Enter'||e.key===' '){e.preventDefault();openFilmInStudio(m);}
  });
  const fit=el('span','tl-film-art-badge');
- fit.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>'+String(m._tasteFit||0)+'% FIT</span>';
+ fit.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></svg><span>'+String(m._tasteFit||0)+'% FIT</span>';
  art.appendChild(fit);
  art.appendChild(el('span','tl-film-year-badge',String(m.release_date||'').slice(0,4)||'—'));
  const trailer=el('button','tl-trailer-circle');
@@ -305,7 +305,7 @@ function addToWatchlist(m,button){
  if(!title){toast('This film has no usable title yet.');return;}
  const key=title.toLocaleLowerCase()+'|'+year,list=readArray('fr_watchlist');
  if(list.some(x=>String(x.title||'').trim().toLocaleLowerCase()+'|'+String(x.year||'').trim()===key)){
-  if(button){button.classList.add('is-added');button.textContent='✓ Already in My Cinema';button.disabled=true;}toast('This film is already in My Cinema.');return;
+  if(button){button.classList.add('is-added');button.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Already in My Cinema</span>';button.disabled=true;}toast('This film is already in My Cinema.');return;
  }
  const poster=m.poster_path?('https://image.tmdb.org/t/p/w500'+(String(m.poster_path).startsWith('/')?m.poster_path:'/'+m.poster_path)):'';
  const backdrop=m.backdrop_path?('https://image.tmdb.org/t/p/original'+(String(m.backdrop_path).startsWith('/')?m.backdrop_path:'/'+m.backdrop_path)):poster;
@@ -316,7 +316,7 @@ function addToWatchlist(m,button){
   let events={};try{const parsed=JSON.parse(localStorage.getItem('fr_watchlist_events')||'{}');if(parsed&&typeof parsed==='object'&&!Array.isArray(parsed))events=parsed;}catch(_){}
   events[key]={action:'add',updatedAt:new Date().toISOString()};const pairs=Object.entries(events);if(pairs.length>2000)events=Object.fromEntries(pairs.slice(-2000));localStorage.setItem('fr_watchlist_events',JSON.stringify(events));
   state.watchlist=next;
-  if(button){button.classList.remove('is-primary');button.classList.add('is-added');button.textContent='✓ Added to My Cinema';button.disabled=true;button.setAttribute('aria-label',title+' added to My Cinema');if(button.animate)button.animate([{transform:'scale(1)',boxShadow:'0 0 0 0 rgba(181,138,242,0)'},{transform:'scale(1.04)',boxShadow:'0 0 0 7px rgba(181,138,242,.14)'},{transform:'scale(1)',boxShadow:'0 0 0 0 rgba(181,138,242,0)'}],{duration:420,easing:'cubic-bezier(.2,.8,.2,1)'});}
+  if(button){button.classList.remove('is-primary');button.classList.add('is-added');button.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Added to My Cinema</span>';button.disabled=true;button.setAttribute('aria-label',title+' added to My Cinema');if(button.animate)button.animate([{transform:'scale(1)',boxShadow:'0 0 0 0 rgba(181,138,242,0)'},{transform:'scale(1.04)',boxShadow:'0 0 0 7px rgba(181,138,242,.14)'},{transform:'scale(1)',boxShadow:'0 0 0 0 rgba(181,138,242,0)'}],{duration:420,easing:'cubic-bezier(.2,.8,.2,1)'});}
   renderProfile(state.profile||{});toast('Added to My Cinema · Want to Watch.');
  }catch(error){console.warn('[Taste Lab] Could not add film to My Cinema:',error);toast('Could not save to My Cinema. Browser storage may be full.');}
 }
