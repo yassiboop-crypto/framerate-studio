@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const CACHE_KEY='fr_taste_ai_rank_v1';
+const CACHE_KEY='fr_taste_ai_rank_v2';
 const LIMIT=12,REVIEW_LIMIT=12;
 const PROVIDERS=['gemini','groq','openai','openrouter'];
 const DEFAULT_MODELS={gemini:'gemini-2.5-flash',groq:'qwen/qwen3.8-27b',openai:'gpt-4o-mini',openrouter:'google/gemini-2.5-flash:free'};
