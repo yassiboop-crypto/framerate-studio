@@ -11,8 +11,26 @@ type Provider = (typeof PROVIDERS)[number];
 type CredentialMap = Partial<Record<Provider, string>>;
 
 function allowedOrigins(): string[] {
-  return (Deno.env.get('FRAMERATE_ALLOWED_ORIGINS') || 'http://localhost:8000,http://127.0.0.1:8000')
+  const defaults = [
+    'https://framerate-studio.netlify.app',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+  ];
+  const configured = (Deno.env.get('FRAMERATE_ALLOWED_ORIGINS') || '')
     .split(',').map((value) => value.trim()).filter(Boolean);
+  return [...new Set([...defaults, ...configured])];
+}
+function isAllowedOrigin(origin: string, configured: string[]): boolean {
+  if (configured.includes(origin)) return true;
+  // Only permit HTTPS Netlify Deploy Previews for this exact project slug.
+  try {
+    const parsed = new URL(origin);
+    return parsed.protocol === 'https:' &&
+      /^deploy-preview-\\d+--framerate-studio\\.netlify\\.app$/.test(parsed.hostname) &&
+      parsed.origin === origin;
+  } catch (_) {
+    return false;
+  }
 }
 function json(data: unknown, status = 200, origin = ''): Response {
   return new Response(JSON.stringify(data), {
@@ -121,6 +139,14 @@ async function callProviderChat(provider: Provider, key: string, body: any): Pro
   const model = String(body.model || '').trim();
   const system = String(body.system || '').slice(0, 12000);
   const prompt = String(body.prompt || '').slice(0, 30000);
+  const requestedTokens = Number(body.maxTokens);
+  const maxTokens = Number.isFinite(requestedTokens) && requestedTokens > 0
+    ? Math.max(512, Math.min(3000, Math.floor(requestedTokens)))
+    : 1100;
+  const requestedTemperature = Number(body.temperature);
+  const temperature = Number.isFinite(requestedTemperature)
+    ? Math.max(0, Math.min(1.5, requestedTemperature))
+    : 0.78;
   if (!model || model.length > 160 || !prompt) throw new Error('A valid model and non-empty prompt are required.');
   let response: Response;
   if (provider === 'gemini') {
@@ -132,7 +158,7 @@ async function callProviderChat(provider: Provider, key: string, body: any): Pro
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: system }] },
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.8, maxOutputTokens: 1100 },
+          generationConfig: { temperature, maxOutputTokens: maxTokens },
         }),
       }, 45000,
     );
@@ -156,7 +182,7 @@ async function callProviderChat(provider: Provider, key: string, body: any): Pro
     method: 'POST', headers,
     body: JSON.stringify({
       model, messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }],
-      temperature: 0.78, max_tokens: 1100,
+      temperature, max_tokens: maxTokens,
     }),
   }, 45000);
   if (!response.ok) throw new Error(`${provider} returned HTTP ${response.status}. Check the selected model and account quota.`);
@@ -167,7 +193,7 @@ async function callProviderChat(provider: Provider, key: string, body: any): Pro
 Deno.serve(async (request) => {
   const origin = request.headers.get('origin') || '';
   const origins = allowedOrigins();
-  if (!origin || !origins.includes(origin)) return new Response('Origin not allowed', { status: 403 });
+  if (!origin || !isAllowedOrigin(origin, origins)) return new Response('Origin not allowed', { status: 403 });
   if (request.method === 'OPTIONS') return new Response('ok', { status: 200, headers: corsHeaders(origin) });
   if (request.method !== 'POST') return json({ error: 'Method not allowed.' }, 405, origin);
 
