@@ -158,6 +158,8 @@ const App = {
             this.goToStep(1);
             // Protect this explicit film choice from any later auth/cloud restore event.
             window.dispatchEvent(new CustomEvent('frameratestudio:taste-film-selected', { detail: { id: tasteMovieId } }));
+            // Ensure the new choice, not the old draft captured during startup, is saved.
+            window.setTimeout(() => window.FrameRateWorkspace?.saveNow?.(), 0);
             // The selected film is now stored by workspace-persistence; remove the
             // one-time URL payload so future refreshes restore the saved workspace.
             const cleanUrl = new URL(window.location.href);
