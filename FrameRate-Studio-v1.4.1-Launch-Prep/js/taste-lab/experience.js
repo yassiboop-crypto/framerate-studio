@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  const select=document.getElementById('tl-language');if(select){select.value=T[lang]?lang:'en';select.addEventListener('change',()=>applyLanguage(select.value));}
  applyLanguage(T[lang]?lang:'en');document.querySelectorAll('[data-tl-step]').forEach(button=>button.addEventListener('click',()=>setStep(button.dataset.tlStep)));
  const bind=(id,next)=>{const node=document.getElementById(id);if(node)node.addEventListener('click',()=>setStep(next));};
- bind('tl-profile-next','tune');bind('tl-tune-back','profile');bind('tl-tune-discover','discover');bind('tl-back-tune','tune');setStep(step);
+ bind('tl-profile-next','tune');bind('tl-tune-back','profile');bind('tl-tune-discover','discover');bind('tl-tune-discover-bottom','discover');bind('tl-back-tune','tune');setStep(step);
 });
 window.TasteLabExperience={setStep,applyLanguage,translations:T};
 })();
