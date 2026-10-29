@@ -63,7 +63,20 @@ function rank(candidates,context){
  });
  const scored=deduped.map(m=>{
   const gf=genreFit(m,profile);
-  const theme=REVIEW.scoreSynopsis(m.overview||'',profile.themeWeights||{});
+  const overview=String(m.overview||'');
+  const theme=REVIEW.scoreSynopsis(overview,profile.themeWeights||{});
+  const overviewNorm=REVIEW.normalizeText(overview);
+  const focusAspect=String(c.focusAspect||'any'),avoidAspect=String(c.avoidAspect||'any'),focusTheme=String(c.focusTheme||'any').replace(/_/g,' ');
+  const aspectMatches=key=>{
+   if(!key||key==='any')return false;
+   const aspect=(REVIEW.aspects||[]).find(x=>x.key===key);
+   return Boolean(aspect&&aspect.terms.some(term=>overviewNorm.includes(REVIEW.normalizeText(term))));
+  };
+  const focusedAspectHit=aspectMatches(focusAspect);
+  const avoidedAspectHit=aspectMatches(avoidAspect);
+  const focusThemeHit=focusTheme!=='any'&&(theme.positiveMatches||[]).some(x=>normalizeTitle(x)===normalizeTitle(focusTheme));
+  const focusBoost=(focusedAspectHit?.11:0)+(focusThemeHit?.14:0);
+  const avoidPenalty=avoidedAspectHit?.14:0;
   const quality=qualityFit(m);
   const popularity=clamp(Math.log1p(Math.max(0,Number(m.popularity)||0))/Math.log1p(maxPop),0,1);
   const ids=(m.genre_ids||[]).map(Number);
@@ -72,14 +85,17 @@ function rank(candidates,context){
   const knownPositive=genreSignals.some(x=>Number(x.weight.score)>=.15);
   const novelty=genreSignals.length?(knownPositive?.34:.84):.60;
   const fb=feedbackBoost(m,feedback);
-  const score=clamp(weights.genre*gf+weights.theme*theme.score+weights.quality*quality+weights.popular*popularity+weights.novelty*novelty+fb,0,1);
+  const score=clamp(weights.genre*gf+weights.theme*theme.score+weights.quality*quality+weights.popular*popularity+weights.novelty*novelty+fb+focusBoost-avoidPenalty,0,1);
   const reasons=[];
   if(positiveGenres.length)reasons.push('Your ratings favor '+positiveGenres.join(' and ')+'.');
   if(theme.positiveMatches.length)reasons.push('Its synopsis overlaps with themes you respond to: '+theme.positiveMatches.slice(0,2).join(', ')+'.');
+  if(focusedAspectHit)reasons.push('Matches the film element you chose to prioritize.');
+  if(avoidedAspectHit)reasons.push('Ranked lower because it matches an element you usually criticize.');
+  if(focusThemeHit)reasons.push('Matches the theme you selected to explore.');
   if(mode==='explore'&&!knownPositive)reasons.push('A deliberate step outside your strongest genre signals.');
   if(Number(m.vote_count)>=1000&&Number(m.vote_average)>=7.0)reasons.push('A well-established audience rating supports this pick.');
   if(!reasons.length)reasons.push(profile.libraryCount?'A fresh candidate ranked from your taste profile and audience signals.':'A discovery starter. Import your Letterboxd history for personal taste signals.');
-  return Object.assign({},m,{_tasteScore:score,_tasteFit:Math.round(score*100),_tasteGenres:ids.map(id=>GENRES[id]).filter(Boolean),_tasteReasons:reasons,_scoreParts:{genre:gf,theme:theme.score,quality,popularity,novelty,feedback:fb},_positiveGenres:positiveGenres});
+  return Object.assign({},m,{_tasteScore:score,_tasteFit:Math.round(score*100),_tasteGenres:ids.map(id=>GENRES[id]).filter(Boolean),_tasteReasons:reasons,_scoreParts:{genre:gf,theme:theme.score,quality,popularity,novelty,feedback:fb,focusBoost,avoidPenalty},_positiveGenres:positiveGenres});
  }).sort((a,b)=>b._tasteScore-a._tasteScore);
  // Greedy re-ranking: keep relevance high while stopping the first screen from becoming
  // a list of near-identical genre combinations.
