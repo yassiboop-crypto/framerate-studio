@@ -16,6 +16,10 @@ function readArray(key){try{const x=JSON.parse(localStorage.getItem(key)||'[]');
 function safeStore(key,value){try{localStorage.setItem(key,JSON.stringify(value));return true;}catch(e){console.warn('[Taste Lab] Could not save',key,e);return false;}}
 function setStatus(message,tone){const n=$('tl-status');n.replaceChildren();if(tone!=='error')n.appendChild(el('span','tl-live-dot'));n.appendChild(el('span','',message));n.classList.toggle('tl-status-warning',tone==='warning');n.classList.toggle('tl-status-error',tone==='error');}
 function toast(message){const n=$('tl-toast');n.textContent=message;n.classList.add('is-visible');clearTimeout(state.toastTimer);state.toastTimer=setTimeout(()=>n.classList.remove('is-visible'),2800);}
+function setTuneStatus(message,tone){
+ const n=$('tl-tune-status');if(!n)return;n.textContent=message;
+ n.classList.toggle('is-working',tone==='working');n.classList.toggle('is-ready',tone==='ready');n.classList.toggle('is-error',tone==='error');
+}
 function accountStatus(){const a=window.FrameRateAuth;$('tl-account-status').textContent=a&&a.currentUser?(a.cloudReady?'SYNCED ACCOUNT':'SYNCING ACCOUNT'):(a&&a.configured?'GUEST PROFILE':'LOCAL PROFILE');}
 function chips(id,items,negative,empty,format,onPick){
  const n=$(id);if(!n)return;n.replaceChildren();
@@ -39,7 +43,7 @@ function activateInsight(type,item){
  else if(type==='focusAspect'){f.focusAspect=String(item.key||'any');f.avoidAspect='any';}
  else if(type==='avoidAspect'){f.avoidAspect=String(item.key||'any');f.focusAspect='any';}
  else if(type==='focusTheme'){f.focusTheme=String(item.key||'any');}
- syncFilterControls();collectFilters();
+ syncFilterControls();collectFilters();setTuneStatus('Searching the catalogue with this taste signal…','working');
  if(window.TasteLabExperience)window.TasteLabExperience.setStep('tune');
  toast(type==='genre'?'Searching this genre…':type==='excludeGenre'?'Excluding this genre…':type==='focusTheme'?'Prioritizing this theme…':'Using this review signal…');
  void load({refreshCandidates:true});
@@ -56,7 +60,7 @@ function metrics(p){
 function renderFocusThemeOptions(p){
  const select=$('tl-focus-theme');if(!select)return;
  const desired=String(state.filters.focusTheme||'any');
- select.replaceChildren(el('option','','Any theme'));
+ const lang=(localStorage.getItem('fr_lang')||localStorage.getItem('fr_taste_language')||'en');const langPack=window.TasteLabExperience&&window.TasteLabExperience.translations&&window.TasteLabExperience.translations[lang];select.replaceChildren(el('option','',langPack&&langPack.anyTheme?langPack.anyTheme:'Any theme'));
  const weights=p&&p.themeWeights||{};
  const themes=Object.entries(weights).map(([key,value])=>({key,label:String(key).replace(/_/g,' '),score:Number(value&&value.score)||0,count:Number(value&&value.count)||0}))
   .sort((a,b)=>Math.abs(b.score)*Math.sqrt(b.count)-Math.abs(a.score)*Math.sqrt(a.count)).slice(0,30);
@@ -333,6 +337,7 @@ async function load(options){
   if(token!==state.loadToken)return;
   renderProfile(state.profile);$('tl-import-note').classList.toggle('tl-hidden',state.library.length>0);
   if(refresh){
+   setTuneStatus('Searching the catalogue and matching your filters…','working');
    setStatus(state.library.length?'Searching a fresh catalogue batch against your taste signals…':'Loading a new catalogue batch. Import history to personalize it…');
    state.candidates=await fetchCandidateBatch();safeStore(CURRENT_BATCH_KEY,state.candidates);
   }else if(!state.candidates.length){
@@ -341,14 +346,14 @@ async function load(options){
   }
   if(token!==state.loadToken)return;
   render();
-  if(!state.candidates.length)setStatus('No fresh matches were returned for this page and filter combination. Try another filter or refresh for a different catalogue batch.','warning');
-  else if(!state.library.length)setStatus('Showing fresh catalogue picks. Import Letterboxd history to personalize genres and themes.','warning');
-  else setStatus('Profile ready. '+state.library.length+' imported films checked; recent recommendations and watchlist entries are filtered out.');
+  if(!state.candidates.length){setStatus('No fresh matches were returned for this page and filter combination. Try another filter or refresh for a different catalogue batch.','warning');setTuneStatus('No matches in this batch. Widen one or more filters, then search again.','error');}
+  else if(!state.library.length){setStatus('Showing fresh catalogue picks. Import Letterboxd history to personalize genres and themes.','warning');setTuneStatus(state.candidates.length+' fresh catalogue candidates loaded. Import Letterboxd history to personalize the ranking.','ready');}
+  else{setStatus('Profile ready. '+state.library.length+' imported films checked; recent recommendations and watchlist entries are filtered out.');setTuneStatus(state.candidates.length+' candidates loaded. Your watched films and recent recommendations are filtered out.','ready');}
  }catch(error){
   if(token!==state.loadToken)return;
   console.error('[Taste Lab] Could not load recommendations:',error);
   const message=error&&error.message?error.message:'Something went wrong while loading Taste Lab.';
-  setStatus(/failed to send a request to the edge function/i.test(message)?'The browser could not reach movie-data-proxy. Deploy the latest Supabase function, then check Supabase Logs if it continues.':message,'error');
+  const displayed=/failed to send a request to the edge function/i.test(message)?'The browser could not reach movie-data-proxy. Deploy the latest Supabase function, then check Supabase Logs if it continues.':message;setStatus(displayed,'error');setTuneStatus(displayed,'error');
  }finally{if(token===state.loadToken){$('tl-rebuild-profile').disabled=false;$('tl-refresh-recommendations').disabled=false;accountStatus();}}
 }
 function init(){
@@ -359,7 +364,7 @@ function init(){
   const node=$(id);if(!node)return;node.addEventListener(id==='tl-title-filter'?'input':'change',()=>{collectFilters();render();});
  });
  $('tl-reset-filters').addEventListener('click',()=>{resetFilters();void load({refreshCandidates:true});});
- const runDiscovery=()=>{collectFilters();if(window.TasteLabExperience)window.TasteLabExperience.setStep('discover');void load({refreshCandidates:true});};
+ const runDiscovery=()=>{collectFilters();setTuneStatus('Searching the catalogue with your selected preferences…','working');if(window.TasteLabExperience)window.TasteLabExperience.setStep('discover');void load({refreshCandidates:true});};
  ['tl-tune-discover','tl-tune-discover-bottom'].forEach(id=>{const button=$(id);if(button)button.addEventListener('click',runDiscovery);});
  $('tl-reset-feedback').addEventListener('click',()=>{
   if(!state.feedback.length){toast('There is no discovery feedback to reset yet.');return;}
