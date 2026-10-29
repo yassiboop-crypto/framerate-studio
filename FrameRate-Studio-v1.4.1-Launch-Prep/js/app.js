@@ -130,6 +130,26 @@ const App = {
     this.initCursorExperience();
     this.initGlobalHoverEffects();
     this.initShareSheetKeyboardSupport();
+
+    // Deep link from Taste Lab: open the selected TMDB film directly in the main studio.
+    const tasteParams = new URLSearchParams(window.location.search);
+    const tasteMovieId = Number(tasteParams.get('frMovieId'));
+    if (Number.isSafeInteger(tasteMovieId) && tasteMovieId > 0) {
+      const posterPath = String(tasteParams.get('frMoviePoster') || '');
+      const item = {
+        id: tasteMovieId,
+        source: 'tmdb',
+        title: String(tasteParams.get('frMovieTitle') || 'Selected film').slice(0, 180),
+        year: String(tasteParams.get('frMovieYear') || '').slice(0, 4),
+        poster: posterPath ? 'https://image.tmdb.org/t/p/w500' + (posterPath.startsWith('/') ? posterPath : '/' + posterPath) : ''
+      };
+      this.selectFilm(item)
+        .then(() => this.goToStep(1))
+        .catch(error => {
+          console.error('[FrameRate] Could not open Taste Lab film:', error);
+          this.showToast('Could not load this film. Try searching for it in FrameRate Studio.');
+        });
+    }
   },
 
   // Dynamically loads JSZip if not already present in index.html
