@@ -2295,15 +2295,19 @@ const App = {
         this.toggleModal('vaultModal');
         this.showToast(response.saved?.length ? `Saved ${response.saved.map(item => item.toUpperCase()).join(', ')} securely to your account.` : 'AI preferences saved. Existing cloud keys were kept.');
       } else {
-        // Guest Mode intentionally remains local-only.
-        Object.entries(credentials).forEach(([providerKey, value]) => {
-          if (value) localStorage.setItem(`fr_key_${providerKey}`, value);
-          else localStorage.removeItem(`fr_key_${providerKey}`);
-        });
+        // Blank password fields mean "no change", not "delete the stored key".
+        // This preserves previously saved Guest keys when the masked inputs are cleared.
+        const supplied = Object.entries(credentials).filter(([, value]) => Boolean(value));
+        supplied.forEach(([providerKey, value]) => localStorage.setItem(`fr_key_${providerKey}`, value));
         this.updateActiveAiBadge(provider);
         auth?.updateCredentialStatusUI?.();
         this.toggleModal('vaultModal');
-        this.showToast('AI settings saved in this browser. Sign in to sync keys securely across devices.');
+        const retained = Object.keys(credentials).filter(providerKey => Api.hasAvailableCredential(providerKey));
+        this.showToast(supplied.length
+          ? `Saved ${supplied.map(([providerKey]) => providerKey.toUpperCase()).join(', ')} in Guest Mode. Existing keys were preserved.`
+          : retained.length
+            ? `Settings saved. Existing ${retained.map(providerKey => providerKey.toUpperCase()).join(', ')} keys were kept.`
+            : 'Settings saved. Enter an API key to enable a cloud AI provider.');
       }
     } catch (error) {
       this.showToast(`Could not save API keys: ${error.message || 'Cloud vault unavailable'}`);
