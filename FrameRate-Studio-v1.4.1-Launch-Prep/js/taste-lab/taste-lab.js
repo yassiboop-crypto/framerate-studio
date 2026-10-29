@@ -40,7 +40,13 @@ function currentRankingContext(movies){return {profile:state.profile,library:sta
 async function improveWithAI(){
  if(state.aiBusy)return;
  if(!state.candidates.length){setAiStatus(aiMessage('aiStatusCandidates','No current films are available to rank.'),'error');return;}
- if(state.filters.sort!=='fit'){setAiStatus(aiMessage('aiStatusSort','Set Sort by to Best taste fit before applying AI ranking.'),'error');return;}
+ if(state.filters.sort!=='fit'){
+  // AI ranking is based on taste-fit, so switch the sort automatically rather
+  // than making the button appear to do nothing when another sort is selected.
+  state.filters.sort='fit';
+  const sortSelect=$('tl-sort-filter');if(sortSelect)sortSelect.value='fit';
+  render();
+ }
  const deterministic=window.TasteRecommender.rank(state.candidates,{profile:state.profile,library:state.library,watchlist:state.watchlist,feedback:state.feedback,mode:state.mode,focusAspect:state.filters.focusAspect,avoidAspect:state.filters.avoidAspect,focusTheme:state.filters.focusTheme});
  const filtered=applyFilters(deterministic),context=currentRankingContext(filtered);
  if(!context.candidates.length){setAiStatus(aiMessage('aiStatusNoMatches','No films match the current filters. Widen the filters first.'),'error');return;}
@@ -51,7 +57,7 @@ async function improveWithAI(){
   if(auth&&auth.currentUser&&auth.currentUser.id){
    if(!auth.cloudReady)throw new Error('Your account is still syncing. Wait a moment, then try AI ranking again.');
    const vaultReady=await auth.refreshCloudCredentials();
-   if(!vaultReady&&auth.credentialStatusError)throw new Error('Secure AI vault unavailable: '+auth.credentialStatusError);
+   if(!vaultReady)throw new Error('Secure AI vault unavailable: '+(auth.credentialStatusError||'Could not refresh saved API-key status. Sign out and back in, then retry.'));
   }
   const result=await window.TasteLabAI.rank(context);
   const latestRanked=window.TasteRecommender.rank(state.candidates,{profile:state.profile,library:state.library,watchlist:state.watchlist,feedback:state.feedback,mode:state.mode,focusAspect:state.filters.focusAspect,avoidAspect:state.filters.avoidAspect,focusTheme:state.filters.focusTheme});
