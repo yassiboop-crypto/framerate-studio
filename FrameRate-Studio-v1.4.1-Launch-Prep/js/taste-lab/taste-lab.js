@@ -136,14 +136,12 @@ function updateModes(){document.querySelectorAll('[data-mode]').forEach(b=>{cons
 function posterImage(movie,art){
  const node=el('img','tl-film-poster'),posterPath=String(movie.poster_path||''),backdropPath=String(movie.backdrop_path||'');
  const makeUrl=(path,size)=>{if(!path)return'';const clean=path.startsWith('/')?path:'/'+path;return 'https://image.tmdb.org/t/p/'+size+clean;};
- let tryingBackdrop=false;
- const posterUrl=makeUrl(posterPath,'w500');
- if(!posterUrl){art.appendChild(el('span','tl-no-poster-mark','▧'));return;}
- node.src=posterUrl;node.alt='Poster for '+String(movie.title||'film');node.loading='lazy';node.decoding='async';node.referrerPolicy='no-referrer';
+ let tryingBackdrop=!posterPath;
+ const firstUrl=posterPath?makeUrl(posterPath,'w500'):makeUrl(backdropPath,'w780');
+ if(!firstUrl){art.appendChild(el('span','tl-no-poster-mark','▧'));return;}
+ node.src=firstUrl;node.alt='Poster for '+String(movie.title||'film');node.loading='lazy';node.decoding='async';node.referrerPolicy='no-referrer';
  node.onerror=()=>{
-  if(!tryingBackdrop&&backdropPath){
-   tryingBackdrop=true;node.src=makeUrl(backdropPath,'w780');return;
-  }
+  if(!tryingBackdrop&&backdropPath){tryingBackdrop=true;node.src=makeUrl(backdropPath,'w780');return;}
   node.remove();if(!art.querySelector('.tl-no-poster-mark'))art.appendChild(el('span','tl-no-poster-mark','▧'));
  };
  art.appendChild(node);
