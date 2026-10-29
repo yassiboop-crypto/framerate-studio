@@ -32,13 +32,13 @@ function setAiStatus(message,tone){
 }
 function updateAiButton(){
  const button=$('tl-ai-rank');if(!button)return;
- button.disabled=state.aiBusy||!state.library.length||!state.candidates.length;
- button.title=!state.library.length?'Import Letterboxd ratings or reviews first.':!state.candidates.length?'Load recommendations before using AI.':'Use the selected AI provider to rank the current filtered candidates.';
+ // A missing Letterboxd history should reduce personalization, not disable AI itself.
+ button.disabled=state.aiBusy||!state.candidates.length;
+ button.title=!state.candidates.length?'Load recommendations before using AI.':!state.library.length?'No Letterboxd history imported: AI can rank the current films generally.':'Use the selected AI provider to rank the current filtered candidates.';
 }
-function currentRankingContext(movies){return {profile:state.profile,library:state.library,candidates:(movies||[]).slice(0,18)};}
+function currentRankingContext(movies){return {profile:state.profile,library:state.library,candidates:(movies||[]).slice(0,12)};}
 async function improveWithAI(){
  if(state.aiBusy)return;
- if(!state.library.length){setAiStatus(aiMessage('aiStatusLibrary','Import Letterboxd ratings or reviews before personalizing with AI.'),'error');return;}
  if(!state.candidates.length){setAiStatus(aiMessage('aiStatusCandidates','No current films are available to rank.'),'error');return;}
  if(state.filters.sort!=='fit'){setAiStatus(aiMessage('aiStatusSort','Set Sort by to Best taste fit before applying AI ranking.'),'error');return;}
  const deterministic=window.TasteRecommender.rank(state.candidates,{profile:state.profile,library:state.library,watchlist:state.watchlist,feedback:state.feedback,mode:state.mode,focusAspect:state.filters.focusAspect,avoidAspect:state.filters.avoidAspect,focusTheme:state.filters.focusTheme});
@@ -54,7 +54,7 @@ async function improveWithAI(){
   render();
   if(!matchingCache||matchingCache.cacheKey!==result.cacheKey){setAiStatus(aiMessage('aiStatusStale','Filters changed during the AI request; the current list keeps its local ranking.'),'warning');}
   else{
-   setAiStatus(result.cached?aiMessage('aiStatusCached','Restored AI ranking from cache; no new request was sent.'):aiMessage('aiStatusDone','AI ranking applied.',{provider:result.provider,model:result.model,count:result.rankings.length}),'ready');
+   setAiStatus(result.cached?aiMessage('aiStatusCached','Restored AI ranking from cache; no new request was sent.'):(state.library.length?aiMessage('aiStatusDone','AI ranking applied.',{provider:result.provider,model:result.model,count:result.rankings.length}):aiMessage('aiStatusDoneGeneric','AI ranked the current films, but this is general discovery until you import your Letterboxd history.',{provider:result.provider,model:result.model,count:result.rankings.length})),'ready');
    if(!result.cached)toast('AI ranking applied. Results are cached locally for this batch.');
   }
  }catch(error){
@@ -337,9 +337,9 @@ function render(){
  const filtered=applyFilters(ranked),context=currentRankingContext(filtered);
  const cachedAI=state.filters.sort==='fit'&&window.TasteLabAI?window.TasteLabAI.getCached(context):null;
  const ordered=state.filters.sort==='fit'&&window.TasteLabAI?window.TasteLabAI.applyRanking(filtered,context,cachedAI):filtered;
- const visible=ordered.slice(0,12);
+ const visible=ordered.slice(0,12),aiApplied=visible.some(m=>m&&m._aiRanked);
  grid.replaceChildren();
- $('tl-results-count').textContent=visible.length?visible.length+' recommendations · '+(state.library.length?'personalized from your signals':'general discovery'):'No films match these filters';
+ $('tl-results-count').textContent=visible.length?visible.length+' recommendations · '+(state.library.length?'personalized from your signals':'general discovery')+(aiApplied?' · AI-assisted ranking'):'No films match these filters';
  if(!visible.length){
   const c=el('div','tl-empty-card');c.appendChild(el('span','tl-empty-symbol','◈'));
   c.appendChild(el('strong','','No fresh films match this selection.'));
