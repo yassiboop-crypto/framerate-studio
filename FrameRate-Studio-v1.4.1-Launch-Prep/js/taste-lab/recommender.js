@@ -75,8 +75,8 @@ function rank(candidates,context){
   const focusedAspectHit=aspectMatches(focusAspect);
   const avoidedAspectHit=aspectMatches(avoidAspect);
   const focusThemeHit=focusTheme!=='any'&&(theme.positiveMatches||[]).some(x=>normalizeTitle(x)===normalizeTitle(focusTheme));
-  const focusBoost=(focusedAspectHit?.11:0)+(focusThemeHit?.14:0);
-  const avoidPenalty=avoidedAspectHit?.14:0;
+  const focusBoost=(focusedAspectHit ? .23 : 0)+(focusThemeHit ? .20 : 0);
+  const avoidPenalty=avoidedAspectHit ? .18 : 0;
   const quality=qualityFit(m);
   const popularity=clamp(Math.log1p(Math.max(0,Number(m.popularity)||0))/Math.log1p(maxPop),0,1);
   const ids=(m.genre_ids||[]).map(Number);
