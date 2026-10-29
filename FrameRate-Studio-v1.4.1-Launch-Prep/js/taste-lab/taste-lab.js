@@ -83,7 +83,10 @@ function remoteParams(page){
  return p;
 }
 async function fetchCandidateBatch(){
- const pages=nextPageWindow(),query=String(state.filters.title||'').trim();
+ const f=state.filters;
+ if(f.yearFrom!=='any'&&f.yearTo!=='any'&&Number(f.yearFrom)>Number(f.yearTo))throw new Error('The release-year range is reversed. Choose a later start year or an earlier end year.');
+ if(Number(f.runtimeMin)>0&&Number(f.runtimeMax)>0&&Number(f.runtimeMin)>Number(f.runtimeMax))throw new Error('The minimum runtime is higher than the maximum runtime. Adjust the runtime range.');
+ const pages=nextPageWindow(),query=String(f.title||'').trim();
  const calls=pages.map(page=>query?proxy('search',{query:query.slice(0,180),page}):proxy('discover',remoteParams(page)));
  const responses=await Promise.all(calls);
  const byId=new Map();
@@ -93,9 +96,22 @@ async function fetchCandidateBatch(){
  let results=Array.from(byId.values());
  const history=state.impressions.slice(-MAX_IMPRESSIONS);
  results=results.filter(movie=>!alreadyImpressed(movie,history));
- // Search results don't receive every advanced Discover filter upstream; apply those
- // constraints client-side too. Discover is already filtered on the server.
- results=applyFiltersToCandidates(results,{ignoreTitle:!query});
+ if(query&& (Number(f.runtimeMin)>0||Number(f.runtimeMax)>0)){
+  // Search responses omit runtime, so hydrate a bounded set of details only when the user
+  // explicitly needs a runtime filter instead of issuing details calls for the full batch.
+  const top=results.slice().sort((a,b)=>(Number(b.popularity)||0)-(Number(a.popularity)||0)).slice(0,24);
+  const runtimeById=new Map();
+  for(let i=0;i<top.length;i+=6){
+   const batch=await Promise.all(top.slice(i,i+6).map(async movie=>{
+    try{return {id:String(movie.id),data:await proxy('details',{id:movie.id})};}catch(_){return {id:String(movie.id),data:null};}
+   }));
+   batch.forEach(x=>{if(x.data)runtimeById.set(x.id,Number(x.data.runtime)||0);});
+  }
+  results=results.map(movie=>Object.assign({},movie,{runtime:runtimeById.get(String(movie.id))||0}));
+ }
+ // Search results receive client-side copies of all selected constraints; Discover also
+ // receives the constraints from Supabase/TMDB, so the catalogue is not limited to page 1-3.
+ results=applyFiltersToCandidates(results,{ignoreTitle:false});
  return results;
 }
 function applyFiltersToCandidates(movies,options){
@@ -111,9 +127,8 @@ function applyFiltersToCandidates(movies,options){
   if(Number(f.rating)>0&&Number(m.vote_average)<Number(f.rating))return false;
   if(Number(f.votes)>0&&Number(m.vote_count)<Number(f.votes))return false;
   if(f.language!=='any'&&String(m.original_language||'')!==String(f.language))return false;
-  // Search endpoints omit runtime; when a text query is active, runtime filtering
-  // is best-effort until the selected movies' details are fetched.
-  if(f.sort==='rating'){} // Final ranking below applies selected sort explicitly.
+  if(Number(f.runtimeMin)>0&&(!Number(m.runtime)||Number(m.runtime)<Number(f.runtimeMin)))return false;
+  if(Number(f.runtimeMax)>0&&(!Number(m.runtime)||Number(m.runtime)>Number(f.runtimeMax)))return false;
   return true;
  });
 }
@@ -221,7 +236,9 @@ function collectFilters(){
 }
 function resetFilters(){
  state.filters={title:'',genre:'any',excludeGenre:'any',yearFrom:'any',yearTo:'any',rating:'0',votes:'0',runtimeMin:'0',runtimeMax:'0',language:'any',sort:'fit'};
- readFilters();collectFilters();render();
+ const ids={title:'tl-title-filter',genre:'tl-genre-filter',excludeGenre:'tl-exclude-genre-filter',yearFrom:'tl-year-from-filter',yearTo:'tl-year-to-filter',rating:'tl-rating-filter',votes:'tl-votes-filter',runtimeMin:'tl-runtime-min-filter',runtimeMax:'tl-runtime-max-filter',language:'tl-original-language',sort:'tl-sort-filter'};
+ Object.entries(ids).forEach(([key,id])=>{const node=$(id);if(node)node.value=state.filters[key];});
+ collectFilters();render();
 }
 function saveFeedback(m,action){
  const year=String(m.release_date||'').slice(0,4),key=String(m.id||'')+'|'+normTitle(m.title);
