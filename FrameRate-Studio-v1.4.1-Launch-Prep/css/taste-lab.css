@@ -238,7 +238,7 @@ body.tl-modal-open{overflow:hidden}
  border:1px solid rgba(255,255,255,.78);
  background:linear-gradient(145deg,rgba(181,138,242,.98),rgba(117,72,191,.98));
  color:#fff;border-radius:50%;
- opacity:0;visibility:hidden;pointer-events:none;
+ opacity:0;visibility:visible;pointer-events:none;
  transform:translate(-50%,-42%) scale(.82);
  box-shadow:0 0 0 7px rgba(181,138,242,.13),0 12px 36px rgba(0,0,0,.42);
  transition:opacity .18s ease,visibility .18s ease,transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s ease;
