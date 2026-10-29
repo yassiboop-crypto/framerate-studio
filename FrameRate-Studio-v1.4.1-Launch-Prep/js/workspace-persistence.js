@@ -5,6 +5,8 @@
   let timer = null;
   let restoring = false;
   let restoreQueued = false;
+  let tasteLabFilmSelectedThisPage = false;
+  window.addEventListener('frameratestudio:taste-film-selected', () => { tasteLabFilmSelectedThisPage = true; });
 
   function readInput(id) { return document.getElementById(id)?.value ?? ''; }
   function readChecked(id) { return Boolean(document.getElementById(id)?.checked); }
@@ -68,12 +70,19 @@
   }
 
   async function restoreFromStorage() {
-    if (!window.App) return;
+    if (!window.App || tasteLabFilmSelectedThisPage) return;
+    // A Taste Lab deep link explicitly selects a different film. Do not let the
+    // previous workspace draft restore over that selected film during startup.
+    const tasteFilmId = new URLSearchParams(window.location.search).get('frMovieId');
+    if (tasteFilmId && Number.isSafeInteger(Number(tasteFilmId)) && Number(tasteFilmId) > 0) {
+      window.dispatchEvent(new CustomEvent('framerateworkspace:restored', { detail: { skippedForTasteLab: true } }));
+      return;
+    }
     if (restoring) { restoreQueued = true; return; }
     let draft;
     try { draft = JSON.parse(localStorage.getItem(KEY) || 'null'); }
     catch (_) { draft = null; }
-    if (!draft || typeof draft !== 'object') return;
+    if (!draft || typeof draft !== 'object') { window.dispatchEvent(new CustomEvent('framerateworkspace:restored')); return; }
 
     restoring = true;
     try {
@@ -151,6 +160,8 @@
       if (restoreQueued) {
         restoreQueued = false;
         setTimeout(restoreFromStorage, 0);
+      } else {
+        window.dispatchEvent(new CustomEvent('framerateworkspace:restored'));
       }
     }
   }

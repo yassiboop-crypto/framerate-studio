@@ -8,8 +8,22 @@ const corsHeaders = (origin: string) => ({
   'Vary': 'Origin',
 });
 function allowedOrigins(): string[] {
-  return (Deno.env.get('FRAMERATE_ALLOWED_ORIGINS') || 'http://localhost:8000,http://127.0.0.1:8000')
+  return (Deno.env.get('FRAMERATE_ALLOWED_ORIGINS') || 'https://framerate-studio.netlify.app,http://localhost:8000,http://127.0.0.1:8000')
     .split(',').map((value) => value.trim()).filter(Boolean);
+}
+
+function isAllowedOrigin(origin: string, configured: string[]): boolean {
+  if (configured.includes(origin)) return true;
+  // Permit only HTTPS Deploy Previews for this exact Netlify site slug.
+  // This is intentionally narrower than accepting every *.netlify.app origin.
+  try {
+    const parsed = new URL(origin);
+    return parsed.protocol === 'https:' &&
+      /^deploy-preview-\d+--framerate-studio\.netlify\.app$/.test(parsed.hostname) &&
+      parsed.origin === origin;
+  } catch (_) {
+    return false;
+  }
 }
 function json(data: unknown, status = 200, origin = ''): Response {
   return new Response(JSON.stringify(data), {
@@ -72,7 +86,7 @@ async function cached(key: string, ttlMs: number, fetcher: () => Promise<unknown
 
 Deno.serve(async (request) => {
   const origin = request.headers.get('origin') || '';
-  if (!origin || !allowedOrigins().includes(origin)) return new Response('Origin not allowed', { status: 403 });
+  if (!origin || !isAllowedOrigin(origin, allowedOrigins())) return new Response('Origin not allowed', { status: 403 });
   if (request.method === 'OPTIONS') return new Response('ok', { status: 200, headers: corsHeaders(origin) });
   if (request.method !== 'POST') return json({ error: 'Method not allowed.' }, 405, origin);
 
@@ -86,8 +100,54 @@ Deno.serve(async (request) => {
     if (action === 'search') {
       const query = String(body.query || '').trim().slice(0, 180);
       if (!query) return json({ results: [] }, 200, origin);
-      const requestInfo = tmdbUrl('search/movie', { query, include_adult: false, language: 'en-US', page: 1 });
-      result = await cached(`search:${query.toLowerCase()}`, 5 * 60_000, () => upstreamJson(requestInfo.url, requestInfo.headers));
+      const page = Math.min(500, Math.max(1, Math.floor(Number(body.page) || 1)));
+      const requestInfo = tmdbUrl('search/movie', { query, include_adult: false, language: 'en-US', page });
+      result = await cached(`search:${query.toLowerCase()}:${page}`, 5 * 60_000, () => upstreamJson(requestInfo.url, requestInfo.headers));
+    } else if (action === 'discover') {
+      const page = Math.min(500, Math.max(1, Math.floor(Number(body.page) || 1)));
+      const params: Record<string, string | number | boolean | undefined> = {
+        page, include_adult: false, include_video: false, language: 'en-US',
+      };
+      const allowedSorts = new Set([
+        'popularity.desc', 'popularity.asc', 'vote_average.desc', 'vote_average.asc',
+        'primary_release_date.desc', 'primary_release_date.asc', 'release_date.desc',
+        'revenue.desc', 'original_title.asc'
+      ]);
+      const sortBy = String(body.sort_by || 'popularity.desc');
+      params.sort_by = allowedSorts.has(sortBy) ? sortBy : 'popularity.desc';
+      const genreFilter = (value: unknown) => {
+        const valueText = String(value || '').trim();
+        return valueText && valueText.length <= 160 && /^\d+(,\d+)*$/.test(valueText) ? valueText : undefined;
+      };
+      const dateFilter = (value: unknown) => {
+        const valueText = String(value || '').trim();
+        return /^\d{4}-\d{2}-\d{2}$/.test(valueText) ? valueText : undefined;
+      };
+      const numericFilter = (value: unknown, min: number, max: number) => {
+        const n = Number(value);
+        return value !== undefined && value !== null && value !== '' && Number.isFinite(n) && n >= min && n <= max ? n : undefined;
+      };
+      const originalLanguage = String(body.with_original_language || '').trim().toLowerCase();
+      params.with_genres = genreFilter(body.with_genres);
+      params.without_genres = genreFilter(body.without_genres);
+      params['primary_release_date.gte'] = dateFilter(body.release_date_gte);
+      params['primary_release_date.lte'] = dateFilter(body.release_date_lte);
+      params['vote_average.gte'] = numericFilter(body.vote_average_gte, 0, 10);
+      params['vote_count.gte'] = numericFilter(body.vote_count_gte, 0, 1000000);
+      params['with_runtime.gte'] = numericFilter(body.with_runtime_gte, 0, 1000);
+      params['with_runtime.lte'] = numericFilter(body.with_runtime_lte, 0, 1000);
+      params.with_original_language = /^[a-z]{2}$/.test(originalLanguage) && originalLanguage !== 'xx' ? originalLanguage : undefined;
+      if (params['primary_release_date.gte'] && params['primary_release_date.lte'] &&
+          String(params['primary_release_date.gte']) > String(params['primary_release_date.lte'])) {
+        return json({ error: 'Release date range is invalid.' }, 400, origin);
+      }
+      if (params['with_runtime.gte'] !== undefined && params['with_runtime.lte'] !== undefined &&
+          Number(params['with_runtime.gte']) > Number(params['with_runtime.lte'])) {
+        return json({ error: 'Runtime range is invalid.' }, 400, origin);
+      }
+      const cacheKey = 'discover:' + JSON.stringify(params);
+      const requestInfo = tmdbUrl('discover/movie', params);
+      result = await cached(cacheKey, 5 * 60_000, () => upstreamJson(requestInfo.url, requestInfo.headers));
     } else if (action === 'details') {
       const id = Number(body.id);
       if (!Number.isInteger(id) || id <= 0) return json({ error: 'A valid TMDB movie ID is required.' }, 400, origin);

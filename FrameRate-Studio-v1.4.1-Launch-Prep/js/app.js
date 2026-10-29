@@ -130,6 +130,49 @@ const App = {
     this.initCursorExperience();
     this.initGlobalHoverEffects();
     this.initShareSheetKeyboardSupport();
+
+    // Deep link from Taste Lab: wait until workspace restoration finishes,
+    // otherwise the previous saved film can overwrite the user's selection.
+    const tasteParams = new URLSearchParams(window.location.search);
+    const tasteMovieId = Number(tasteParams.get('frMovieId'));
+    if (Number.isSafeInteger(tasteMovieId) && tasteMovieId > 0) {
+      const posterPath = String(tasteParams.get('frMoviePoster') || '');
+      const backdropPath = String(tasteParams.get('frMovieBackdrop') || '');
+      const rawGenres = String(tasteParams.get('frMovieGenres') || '');
+      const item = {
+        id: tasteMovieId,
+        source: 'tmdb',
+        title: String(tasteParams.get('frMovieTitle') || 'Selected film').slice(0, 180),
+        year: String(tasteParams.get('frMovieYear') || '').slice(0, 4),
+        overview: String(tasteParams.get('frMovieOverview') || '').slice(0, 1600),
+        genres: rawGenres.split('|').map(x => x.trim()).filter(Boolean).slice(0, 10),
+        poster: posterPath ? 'https://image.tmdb.org/t/p/w500' + (posterPath.startsWith('/') ? posterPath : '/' + posterPath) : '',
+        backdrop: backdropPath ? 'https://image.tmdb.org/t/p/original' + (backdropPath.startsWith('/') ? backdropPath : '/' + backdropPath) : ''
+      };
+      let tasteDeepLinkHandled = false;
+      const openTasteFilm = () => {
+        if (tasteDeepLinkHandled) return;
+        tasteDeepLinkHandled = true;
+        this.selectFilm(item)
+          .then(() => {
+            this.goToStep(1);
+            // Protect this explicit film choice from any later auth/cloud restore event.
+            window.dispatchEvent(new CustomEvent('frameratestudio:taste-film-selected', { detail: { id: tasteMovieId } }));
+            // Ensure the new choice, not the old draft captured during startup, is saved.
+            window.setTimeout(() => window.FrameRateWorkspace?.saveNow?.(), 0);
+            // The selected film is now stored by workspace-persistence; remove the
+            // one-time URL payload so future refreshes restore the saved workspace.
+            const cleanUrl = new URL(window.location.href);
+            ['frMovieId', 'frMovieTitle', 'frMovieYear', 'frMoviePoster', 'frMovieBackdrop', 'frMovieOverview', 'frMovieGenres'].forEach(key => cleanUrl.searchParams.delete(key));
+            window.history.replaceState({}, document.title, cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
+          })
+          .catch(error => {
+            console.error('[FrameRate] Could not open Taste Lab film:', error);
+            this.showToast('Could not load this film. Try searching for it in FrameRate Studio.');
+          });
+      };
+      window.addEventListener('framerateworkspace:restored', openTasteFilm, { once: true });
+    }
   },
 
   // Dynamically loads JSZip if not already present in index.html
