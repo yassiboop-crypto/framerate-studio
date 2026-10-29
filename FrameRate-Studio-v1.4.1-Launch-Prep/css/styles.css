@@ -1624,3 +1624,9 @@ input, select, textarea, button { max-width: 100%; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+
+/* Taste Lab uses cool mint as its workspace accent while FrameRate's orange brand remains unchanged. */
+.fr-taste-lab-header-btn{border:1px solid rgba(99,223,200,.30);background:rgba(99,223,200,.075);color:#78e9d4;text-decoration:none}
+.fr-taste-lab-header-btn:hover{border-color:rgba(99,223,200,.56);background:rgba(99,223,200,.14);transform:translateY(-1px)}
+.fr-taste-lab-header-btn>span:first-child{color:#63dfc8;font-size:15px;line-height:1}
+@media(max-width:420px){.fr-taste-lab-label{display:none}.fr-taste-lab-header-btn{padding-left:10px!important;padding-right:10px!important}}
