@@ -339,7 +339,7 @@ function render(){
  const ordered=state.filters.sort==='fit'&&window.TasteLabAI?window.TasteLabAI.applyRanking(filtered,context,cachedAI):filtered;
  const visible=ordered.slice(0,12),aiApplied=visible.some(m=>m&&m._aiRanked);
  grid.replaceChildren();
- $('tl-results-count').textContent=visible.length?visible.length+' recommendations · '+(state.library.length?'personalized from your signals':'general discovery')+(aiApplied?' · AI-assisted ranking'):'No films match these filters';
+ $('tl-results-count').textContent=visible.length?visible.length+' recommendations · '+(state.library.length?'personalized from your signals':'general discovery')+(aiApplied?' · AI-assisted ranking':''):'No films match these filters';
  if(!visible.length){
   const c=el('div','tl-empty-card');c.appendChild(el('span','tl-empty-symbol','◈'));
   c.appendChild(el('strong','','No fresh films match this selection.'));
