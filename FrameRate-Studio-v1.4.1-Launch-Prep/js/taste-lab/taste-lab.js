@@ -9,7 +9,7 @@ const MAX_PAGES=500, PAGES_PER_REFRESH=3, MAX_IMPRESSIONS=350, $=id=>document.ge
 const state={
  library:[],watchlist:[],feedback:[],impressions:[],profile:null,candidates:[],mode:'balanced',
  filters:{title:'',genre:'any',excludeGenre:'any',yearFrom:'any',yearTo:'any',rating:'0',votes:'0',runtimeMin:'0',runtimeMax:'0',language:'any',focusAspect:'any',avoidAspect:'any',focusTheme:'any',sort:'fit'},
- loadToken:0,toastTimer:null,trailerRequestId:0
+ loadToken:0,toastTimer:null,trailerRequestId:0,activeAccountKey:null
 };
 function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined&&text!==null)n.textContent=String(text);return n;}
 function readArray(key){try{const x=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(x)?x:[];}catch(_){return[];}}
@@ -21,6 +21,10 @@ function setTuneStatus(message,tone){
  n.classList.toggle('is-working',tone==='working');n.classList.toggle('is-ready',tone==='ready');n.classList.toggle('is-error',tone==='error');
 }
 function accountStatus(){const a=window.FrameRateAuth;$('tl-account-status').textContent=a&&a.currentUser?(a.cloudReady?'SYNCED ACCOUNT':'SYNCING ACCOUNT'):(a&&a.configured?'GUEST PROFILE':'LOCAL PROFILE');}
+function currentAccountKey(){
+ const a=window.FrameRateAuth,user=a&&a.currentUser;
+ return String(user&&(user.id||(user.user&&user.user.id))||'guest');
+}
 function chips(id,items,negative,empty,format,onPick){
  const n=$(id);if(!n)return;n.replaceChildren();
  if(!items||!items.length){n.appendChild(el('span','tl-chip-muted',empty));return;}
@@ -324,7 +328,10 @@ function saveFeedback(m,action){
  renderProfile(state.profile||{});render();toast(action==='more-like-this'?'Saved. Related genres get a small boost.':action==='not-for-me'?'Saved. This film will be hidden from discovery.':'Saved. This film will be excluded from discovery.');
 }
 async function load(options){
- const o=options||{},token=++state.loadToken,rebuild=Boolean(o.forceProfile),refresh=Boolean(o.refreshCandidates);
+ const o=options||{},activeAccountKey=currentAccountKey();
+ if(state.activeAccountKey!==null&&state.activeAccountKey!==activeAccountKey){state.candidates=[];state.profile=null;state.feedback=[];state.impressions=[];state.watchlist=[];state.library=[];}
+ state.activeAccountKey=activeAccountKey;
+ const token=++state.loadToken,rebuild=Boolean(o.forceProfile),refresh=Boolean(o.refreshCandidates);
  $('tl-rebuild-profile').disabled=true;$('tl-refresh-recommendations').disabled=true;
  setStatus(rebuild?'Re-reading ratings and reviews, then rebuilding the profile…':'Reading your account library and preparing recommendations…');
  try{
