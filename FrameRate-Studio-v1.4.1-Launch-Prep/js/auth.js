@@ -612,7 +612,20 @@
       if (!this.client || !this.configured) throw new Error('Configure Supabase before using the cloud AI vault.');
       if (!this.currentUser?.id || !this.cloudReady) throw new Error('Sign in and wait for account sync before using cloud AI keys.');
       const { data, error } = await this.client.functions.invoke('credential-vault', { body: payload });
-      if (error) throw new Error(error.message || 'The secure AI vault request failed. Deploy supabase/functions/credential-vault first.');
+      if (error) {
+        let message = error.message || 'The secure AI vault request failed. Deploy supabase/functions/credential-vault first.';
+        // Supabase wraps non-2xx Edge Function responses in FunctionsHttpError;
+        // expose the server's safe error text so Taste Lab can show the real cause.
+        try {
+          const response = error.context;
+          if (response && typeof response.clone === 'function') {
+            const details = await response.clone().json();
+            if (typeof details?.error === 'string' && details.error) message = details.error;
+            else if (typeof details?.message === 'string' && details.message) message = details.message;
+          }
+        } catch (_) { /* retain the original SDK message */ }
+        throw new Error(message);
+      }
       if (data?.error) throw new Error(data.error);
       return data || {};
     },
