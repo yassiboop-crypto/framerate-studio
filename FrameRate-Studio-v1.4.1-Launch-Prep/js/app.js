@@ -98,7 +98,9 @@ const App = {
     if (typeof I18n !== 'undefined') I18n.setLanguage(savedLang);
 
     this.loadSavedSettings();
-    this.loadSavedLbLibrary();
+    void this.loadSavedLbLibrary();
+    // Re-read the account-scoped library after Supabase restores the signed-in profile.
+    window.addEventListener('frameratedataready', () => { void this.loadSavedLbLibrary(); });
 
     const dateInput = document.getElementById('watchedDateInput');
     if (dateInput) {
@@ -1589,20 +1591,40 @@ const App = {
     document.getElementById(id)?.classList.toggle('hidden');
   },
 
-  loadSavedLbLibrary() {
+  async loadSavedLbLibrary() {
+    let saved = null;
     try {
-      const saved = JSON.parse(localStorage.getItem('fr_lb_zip_library') || '[]');
-      if (Array.isArray(saved) && saved.length > 0) {
-        this.lbLibrary = saved;
-        this.renderLbLibraryModal();
-      }
-    } catch (e) {
-      this.lbLibrary = [];
+      if (window.FrameRateLibraryStore) saved = await window.FrameRateLibraryStore.get();
+    } catch (error) {
+      console.warn('[FrameRate Library] IndexedDB read failed; using the synced browser copy:', error);
     }
+    if (!Array.isArray(saved) || !saved.length) {
+      try {
+        const fallback = JSON.parse(localStorage.getItem('fr_lb_zip_library') || '[]');
+        if (Array.isArray(fallback)) {
+          saved = fallback;
+          if (saved.length && window.FrameRateLibraryStore) {
+            try { await window.FrameRateLibraryStore.set(saved); } catch (error) {
+              console.warn('[FrameRate Library] Could not migrate the browser copy to IndexedDB:', error);
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('[FrameRate Library] Could not read the saved Letterboxd library:', error);
+      }
+    }
+    this.lbLibrary = Array.isArray(saved) ? saved : [];
+    this.renderLbLibraryModal();
+    return this.lbLibrary;
   },
 
   clearSavedLbLibrary() {
     this.lbLibrary = [];
+    if (window.FrameRateLibraryStore) {
+      void window.FrameRateLibraryStore.clear().catch(error =>
+        console.warn('[FrameRate Library] Could not clear the full local archive:', error)
+      );
+    }
     localStorage.removeItem('fr_lb_zip_library');
     document.getElementById('lbLibraryControls')?.classList.add('hidden');
     const stage = document.getElementById('rssResultsStage');
@@ -1682,17 +1704,28 @@ const App = {
       }
 
       this.lbLibrary = merged;
+      let fullArchiveSaved = false;
+      if (window.FrameRateLibraryStore) {
+        try { fullArchiveSaved = await window.FrameRateLibraryStore.set(merged); }
+        catch (storageErr) {
+          console.warn('[FrameRate Library] Full archive could not be saved to IndexedDB:', storageErr);
+        }
+      }
+      // Keep the existing compact account-sync snapshot for older builds and cloud
+      // portability. The complete local archive lives separately in IndexedDB.
       try {
         localStorage.setItem('fr_lb_zip_library', JSON.stringify(merged.slice(0, 3000)));
       } catch (storageErr) {
-        console.warn('Storage quota exceeded, keeping in memory:', storageErr);
+        console.warn('Storage quota exceeded; the full local archive may still be available in IndexedDB:', storageErr);
       }
 
       if (titleEl) titleEl.textContent = `Loaded ${merged.length} Films from ${files[0].name}`;
       this.lbFilterMode = 'all';
       this.lbSearchQuery = '';
       this.renderLbLibraryModal();
-      this.showToast(`Successfully imported ${merged.length} Letterboxd films!`);
+      this.showToast(fullArchiveSaved
+        ? `Imported and saved all ${merged.length} Letterboxd films on this browser.`
+        : `Imported ${merged.length} films for this session. Full local storage was unavailable; keep this ZIP to re-import later.`);
     } catch (err) {
       console.error('Archive parse error:', err);
       if (titleEl) titleEl.textContent = 'Import Letterboxd Export (.ZIP) or .CSV';
