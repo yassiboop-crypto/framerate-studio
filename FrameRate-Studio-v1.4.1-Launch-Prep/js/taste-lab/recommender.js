@@ -23,6 +23,23 @@ function genreFit(movie,profile){
  const negMean=neg.length?neg.reduce((a,b)=>a+b,0)/neg.length:0;
  return clamp(.5+posMean*.44-negMean*.36,.04,.96);
 }
+function tagFit(movie,profile){
+ const weights=profile&&profile.tagWeights||{},text=REVIEW.normalizeText(String(movie.title||'')+' '+String(movie.overview||''));
+ let positive=0,negative=0,matched=0;const likedTags=[],avoidedTags=[];
+ Object.entries(weights).forEach(([raw,item])=>{
+  const tag=REVIEW.normalizeText(raw).trim();
+  if(!tag||tag.length<2||tag.length>48)return;
+  const found=tag.includes(' ')?text.includes(tag):new RegExp('(^|[^a-z0-9])'+tag.replace(/[.*+?^${}()|[\]\\]/g,'\\function qualityFit(movie){')+'([^a-z0-9]|$)').test(text);
+  if(!found)return;
+  const score=Number(item&&item.score)||0,evidence=Math.max(1,Number(item&&item.evidence)||1);
+  if(Math.abs(score)<.08)return;
+  const signal=score*Math.min(1,Math.sqrt(evidence)/2);
+  if(signal>0){positive+=signal;likedTags.push(raw);}
+  else{negative+=Math.abs(signal);avoidedTags.push(raw);}
+  matched++;
+ });
+ return{score:matched?clamp(.5+(positive-negative)/(matched+1)*.46,.04,.96):.5,positiveMatches:likedTags,negativeMatches:avoidedTags};
+}
 function qualityFit(movie){
  const count=Math.max(0,Number(movie.vote_count)||0),rating=clamp(Number(movie.vote_average)||0,0,10);
  return clamp(((rating*count)+(PRIOR_RATING*PRIOR_VOTES))/(count+PRIOR_VOTES)/10,0,1);
@@ -46,10 +63,10 @@ function rank(candidates,context){
  const seen=buildSeenSet(c.library,c.watchlist,feedback),all=Array.isArray(candidates)?candidates:[];
  const maxPop=Math.max(1,...all.map(m=>Number(m&&m.popularity)||0));
  const weights=mode==='comfort'
-  ?{genre:.62,theme:.16,quality:.14,popular:.08,novelty:0,diversity:.07}
+  ?{genre:.57,theme:.15,tags:.12,quality:.10,popular:.04,novelty:.02,diversity:.07}
   :mode==='explore'
-   ?{genre:.32,theme:.30,quality:.13,popular:.06,novelty:.19,diversity:.24}
-   :{genre:.45,theme:.25,quality:.17,popular:.08,novelty:.05,diversity:.15};
+   ?{genre:.30,theme:.26,tags:.08,quality:.12,popular:.06,novelty:.18,diversity:.24}
+   :{genre:.42,theme:.23,tags:.10,quality:.16,popular:.06,novelty:.03,diversity:.15};
  const deduped=[],seenIds=new Set(),seenTitleYears=new Set();
  all.forEach(m=>{
   if(!m||!m.title)return;
@@ -65,6 +82,7 @@ function rank(candidates,context){
   const gf=genreFit(m,profile);
   const overview=String(m.overview||'');
   const theme=REVIEW.scoreSynopsis(overview,profile.themeWeights||{});
+  const tag=tagFit(m,profile);
   const overviewNorm=REVIEW.normalizeText(overview);
   const focusAspect=String(c.focusAspect||'any'),avoidAspect=String(c.avoidAspect||'any'),focusTheme=String(c.focusTheme||'any').replace(/_/g,' ');
   const aspectMatches=key=>{
@@ -85,17 +103,19 @@ function rank(candidates,context){
   const knownPositive=genreSignals.some(x=>Number(x.weight.score)>=.15);
   const novelty=genreSignals.length?(knownPositive?.34:.84):.60;
   const fb=feedbackBoost(m,feedback);
-  const score=clamp(weights.genre*gf+weights.theme*theme.score+weights.quality*quality+weights.popular*popularity+weights.novelty*novelty+fb+focusBoost-avoidPenalty,0,1);
+  const score=clamp(weights.genre*gf+weights.theme*theme.score+weights.tags*tag.score+weights.quality*quality+weights.popular*popularity+weights.novelty*novelty+fb+focusBoost-avoidPenalty,0,1);
   const reasons=[];
   if(positiveGenres.length)reasons.push('Your ratings favor '+positiveGenres.join(' and ')+'.');
   if(theme.positiveMatches.length)reasons.push('Its synopsis overlaps with themes you respond to: '+theme.positiveMatches.slice(0,2).join(', ')+'.');
+  if(tag.positiveMatches.length)reasons.push('Matches your positively rated Letterboxd tags: '+tag.positiveMatches.slice(0,2).join(', ')+'.');
+  if(tag.negativeMatches.length)reasons.push('Lowered because its synopsis matches tags linked to lower-rated films: '+tag.negativeMatches.slice(0,2).join(', ')+'.');
   if(focusedAspectHit)reasons.push('Matches the film element you chose to prioritize.');
   if(avoidedAspectHit)reasons.push('Ranked lower because it matches an element you usually criticize.');
   if(focusThemeHit)reasons.push('Matches the theme you selected to explore.');
   if(mode==='explore'&&!knownPositive)reasons.push('A deliberate step outside your strongest genre signals.');
   if(Number(m.vote_count)>=1000&&Number(m.vote_average)>=7.0)reasons.push('A well-established audience rating supports this pick.');
   if(!reasons.length)reasons.push(profile.libraryCount?'A fresh candidate ranked from your taste profile and audience signals.':'A discovery starter. Import your Letterboxd history for personal taste signals.');
-  return Object.assign({},m,{_tasteScore:score,_tasteFit:Math.round(score*100),_tasteGenres:ids.map(id=>GENRES[id]).filter(Boolean),_tasteReasons:reasons,_scoreParts:{genre:gf,theme:theme.score,quality,popularity,novelty,feedback:fb,focusBoost,avoidPenalty},_positiveGenres:positiveGenres});
+  return Object.assign({},m,{_tasteScore:score,_tasteFit:Math.round(score*100),_tasteGenres:ids.map(id=>GENRES[id]).filter(Boolean),_tasteReasons:reasons,_scoreParts:{genre:gf,theme:theme.score,tags:tag.score,quality,popularity,novelty,feedback:fb,focusBoost,avoidPenalty},_positiveGenres:positiveGenres});
  }).sort((a,b)=>b._tasteScore-a._tasteScore);
  // Greedy re-ranking: keep relevance high while stopping the first screen from becoming
  // a list of near-identical genre combinations.
