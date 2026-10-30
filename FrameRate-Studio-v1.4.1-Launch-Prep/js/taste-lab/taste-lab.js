@@ -5,7 +5,7 @@ const FILTER_KEY='fr_taste_filters_v1';
 const IMPRESSIONS_KEY='fr_taste_impressions_v1';
 const CURSOR_KEY='fr_taste_catalogue_cursor_v1';
 const CURRENT_BATCH_KEY='fr_taste_current_batch_v1';
-const MAX_PAGES=500, PAGES_PER_REFRESH=3, MAX_IMPRESSIONS=350, $=id=>document.getElementById(id);
+const MAX_PAGES=500, PAGES_PER_REFRESH=4, MAX_IMPRESSIONS=350, $=id=>document.getElementById(id);
 const state={
  library:[],watchlist:[],feedback:[],impressions:[],profile:null,candidates:[],mode:'balanced',
  filters:{title:'',genre:'any',excludeGenre:'any',yearFrom:'any',yearTo:'any',rating:'0',votes:'0',runtimeMin:'0',runtimeMax:'0',language:'any',focusAspect:'any',avoidAspect:'any',focusTheme:'any',sort:'fit'},
@@ -195,7 +195,28 @@ async function fetchCandidateBatch(){
  if(f.yearFrom!=='any'&&f.yearTo!=='any'&&Number(f.yearFrom)>Number(f.yearTo))throw new Error('The release-year range is reversed. Choose a later start year or an earlier end year.');
  if(Number(f.runtimeMin)>0&&Number(f.runtimeMax)>0&&Number(f.runtimeMin)>Number(f.runtimeMax))throw new Error('The minimum runtime is higher than the maximum runtime. Adjust the runtime range.');
  const pages=nextPageWindow(),query=String(f.title||'').trim();
- const calls=pages.map(page=>query?proxy('search',{query:query.slice(0,180),page}):proxy('discover',remoteParams(page)));
+ let calls;
+ if(query){
+  calls=pages.map(page=>proxy('search',{query:query.slice(0,180),page}));
+ }else{
+  const preferred=Object.entries(state.profile&&state.profile.genreWeights||{})
+   .filter(([,value])=>Number(value&&value.score)>.10)
+   .sort((a,b)=>Number(b[1].score)*Math.sqrt(Number(b[1].evidence)||1)-Number(a[1].score)*Math.sqrt(Number(a[1].evidence)||1))
+   .slice(0,2).map(([id])=>String(id));
+  const lanes=[
+   {page:pages[0],sort:'popularity.desc',genre:''},
+   {page:pages[1],sort:'vote_average.desc',genre:'',quality:true},
+   {page:pages[2],sort:'popularity.desc',genre:state.mode==='explore'?'':preferred[0]||''},
+   {page:pages[3],sort:state.mode==='explore'?'primary_release_date.desc':'vote_average.desc',genre:state.mode==='explore'?'':preferred[1]||'' ,quality:state.mode!=='explore'}
+  ];
+  calls=lanes.map(lane=>{
+   const params=remoteParams(lane.page);
+   params.sort_by=lane.sort;
+   if(lane.quality)params.vote_count_gte=Math.max(Number(params.vote_count_gte)||0,250);
+   if(lane.genre&&f.genre==='any')params.with_genres=lane.genre;
+   return proxy('discover',params);
+  });
+ }
  const responses=await Promise.all(calls);
  const byId=new Map();
  responses.forEach(response=>(response.results||[]).forEach(movie=>{
@@ -219,7 +240,7 @@ async function fetchCandidateBatch(){
  }
  // Search results receive client-side copies of all selected constraints; Discover also
  // receives the constraints from Supabase/TMDB, so the catalogue is not limited to page 1-3.
- results=applyFiltersToCandidates(results,{ignoreTitle:false});
+ results=applyFiltersToCandidates(results,{ignoreTitle:false,verifyRuntime:Boolean(query)});
  return results;
 }
 function applyFiltersToCandidates(movies,options){
@@ -235,8 +256,10 @@ function applyFiltersToCandidates(movies,options){
   if(Number(f.rating)>0&&Number(m.vote_average)<Number(f.rating))return false;
   if(Number(f.votes)>0&&Number(m.vote_count)<Number(f.votes))return false;
   if(f.language!=='any'&&String(m.original_language||'')!==String(f.language))return false;
-  if(Number(f.runtimeMin)>0&&(!Number(m.runtime)||Number(m.runtime)<Number(f.runtimeMin)))return false;
-  if(Number(f.runtimeMax)>0&&(!Number(m.runtime)||Number(m.runtime)>Number(f.runtimeMax)))return false;
+  const runtime=Number(m.runtime)||0,verifyRuntime=Boolean(o.verifyRuntime);
+  if(Number(f.runtimeMin)>0&&runtime>0&&runtime<Number(f.runtimeMin))return false;
+  if(Number(f.runtimeMax)>0&&runtime>0&&runtime>Number(f.runtimeMax))return false;
+  if(verifyRuntime&&(Number(f.runtimeMin)>0||Number(f.runtimeMax)>0)&&!runtime)return false;
   return true;
  });
 }
