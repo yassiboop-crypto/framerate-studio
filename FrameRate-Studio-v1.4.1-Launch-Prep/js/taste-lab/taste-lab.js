@@ -433,7 +433,18 @@ async function load(options){
  $('tl-rebuild-profile').disabled=true;$('tl-refresh-recommendations').disabled=true;
  setStatus(rebuild?'Re-reading ratings and reviews, then rebuilding the profile…':'Reading your account library and preparing recommendations…');
  try{
-  state.library=readArray('fr_lb_zip_library').filter(x=>x&&x.title);
+  let fullLibrary=null;
+  if(window.FrameRateLibraryStore){
+   try{fullLibrary=await window.FrameRateLibraryStore.get();}
+   catch(error){console.warn('[Taste Lab] Could not read the full IndexedDB archive; using the synced browser snapshot:',error);}
+  }
+  if(token!==state.loadToken)return;
+  state.library=(Array.isArray(fullLibrary)?fullLibrary:readArray('fr_lb_zip_library')).filter(x=>x&&x.title);
+  if(!Array.isArray(fullLibrary)&&state.library.length&&window.FrameRateLibraryStore){
+   try{await window.FrameRateLibraryStore.set(state.library);}
+   catch(error){console.warn('[Taste Lab] Could not migrate the account library to IndexedDB:',error);}
+  }
+  if(token!==state.loadToken)return;
   state.watchlist=readArray('fr_watchlist').filter(x=>x&&x.title);
   state.feedback=readArray(FEEDBACK_KEY).filter(x=>x&&x.title);
   state.impressions=readArray(IMPRESSIONS_KEY).filter(x=>x&&(x.id||x.title));
