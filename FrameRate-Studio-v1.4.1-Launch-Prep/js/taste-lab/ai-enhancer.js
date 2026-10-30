@@ -1,7 +1,7 @@
 (function(){
 'use strict';
-const CACHE_KEY='fr_taste_ai_rank_v2';
-const LIMIT=12,REVIEW_LIMIT=12;
+const CACHE_KEY='fr_taste_ai_rank_v3';
+const LIMIT=18,REVIEW_LIMIT=12;
 const PROVIDERS=['gemini','groq','openai','openrouter'];
 const DEFAULT_MODELS={gemini:'gemini-2.5-flash',groq:'qwen/qwen3.8-27b',openai:'gpt-4o-mini',openrouter:'google/gemini-2.5-flash:free'};
 const API_URLS={groq:'https://api.groq.com/openai/v1/chat/completions',openai:'https://api.openai.com/v1/chat/completions',openrouter:'https://openrouter.ai/api/v1/chat/completions'};
@@ -45,7 +45,8 @@ function reviewSamples(rows){
 function profileSummary(profile){
  const p=profile||{};
  const genres=Object.entries(p.genreWeights||{}).map(([id,v])=>({name:String(v&&v.name||id),score:Number(v&&v.score)||0,evidence:Number(v&&v.evidence)||0})).sort((a,b)=>Math.abs(b.score)*Math.sqrt(b.evidence+1)-Math.abs(a.score)*Math.sqrt(a.evidence+1)).slice(0,10);
- return {libraryCount:Number(p.libraryCount)||0,ratedCount:Number(p.ratedCount)||0,reviewCount:Number(p.reviewCount)||0,higherRatedGenres:genres.filter(x=>x.score>.05).slice(0,6),lowerRatedGenres:genres.filter(x=>x.score<-.05).slice(0,5),aspectsPraised:(p.lovedAspects||[]).slice(0,8).map(x=>typeof x==='string'?x:cleanText(x.label||x.key,80)),aspectsCriticized:(p.criticizedAspects||[]).slice(0,8).map(x=>typeof x==='string'?x:cleanText(x.label||x.key,80)),themesLiked:(p.positiveThemes||[]).slice(0,10).map(x=>typeof x==='string'?x:cleanText(x.label||x.key,80)),themesDisliked:(p.negativeThemes||[]).slice(0,8).map(x=>typeof x==='string'?x:cleanText(x.label||x.key,80)),averageReviewSentiment:Number(p.averageReviewSentiment)||0};
+ const tags=Object.entries(p.tagWeights||{}).map(([tag,value])=>({tag:cleanText(tag,60),score:Number(value&&value.score)||0,evidence:Number(value&&value.evidence)||0})).sort((a,b)=>Math.abs(b.score)*Math.sqrt(b.evidence+1)-Math.abs(a.score)*Math.sqrt(a.evidence+1)).slice(0,14);
+ return {libraryCount:Number(p.libraryCount)||0,ratedCount:Number(p.ratedCount)||0,reviewCount:Number(p.reviewCount)||0,averageRating:Number(p.averageRating)||0,ratingDistribution:p.ratingDistribution||{},higherRatedGenres:genres.filter(x=>x.score>.05).slice(0,6),lowerRatedGenres:genres.filter(x=>x.score<-.05).slice(0,5),preferredTags:tags.filter(x=>x.score>.05).slice(0,10),dislikedTags:tags.filter(x=>x.score<-.05).slice(0,8),aspectsPraised:(p.lovedAspects||[]).slice(0,8).map(x=>typeof x==='string'?x:cleanText(x.label||x.key,80)),aspectsCriticized:(p.criticizedAspects||[]).slice(0,8).map(x=>typeof x==='string'?x:cleanText(x.label||x.key,80)),themesLiked:(p.positiveThemes||[]).slice(0,10).map(x=>typeof x==='string'?x:cleanText(x.label||x.key,80)),themesDisliked:(p.negativeThemes||[]).slice(0,8).map(x=>typeof x==='string'?x:cleanText(x.label||x.key,80)),averageReviewSentiment:Number(p.averageReviewSentiment)||0};
 }
 function candidateSummary(movie){return {id:String(movie.id||''),title:cleanText(movie.title,130),year:yearOf(movie),genres:(movie._tasteGenres||[]).slice(0,6).map(x=>cleanText(x,35)),synopsis:cleanText(movie.overview,300),audienceRating:Number(movie.vote_average)||0,voteCount:Number(movie.vote_count)||0,localFit:Math.round(100*Math.max(0,Math.min(1,Number(movie._diversityScore??movie._tasteScore)||0))),localSignals:(movie._tasteReasons||[]).slice(0,2).map(x=>cleanText(x,140))};}
 function buildInput(context,config){
