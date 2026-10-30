@@ -37,7 +37,7 @@ function updateAiButton(){
  button.disabled=state.aiBusy||!state.candidates.length;
  button.title=!state.candidates.length?'Load recommendations before using AI.':!state.library.length?'No Letterboxd history imported: AI can rank the current films generally.':'Use the selected AI provider to rank the current filtered candidates.';
 }
-function currentRankingContext(movies){return {profile:state.profile,library:state.library,candidates:(movies||[]).slice(0,12)};}
+function currentRankingContext(movies){return {profile:state.profile,library:state.library,candidates:(movies||[]).slice(0,18)};}
 async function improveWithAI(){
  if(state.aiBusy)return;
  if(!state.candidates.length){setAiStatus(aiMessage('aiStatusCandidates','No current films are available to rank.'),'error');return;}
