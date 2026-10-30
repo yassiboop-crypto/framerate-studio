@@ -143,6 +143,11 @@ function renderProfile(p){
  chips('tl-loved-aspects',p&&p.lovedAspects,false,p&&p.reviewCount?'No clear positive aspect signal':'Import review text to analyze this',x=>x.label,x=>activateInsight('focusAspect',x));
  chips('tl-criticized-aspects',p&&p.criticizedAspects,true,p&&p.reviewCount?'No clear recurring criticism':'Import review text to analyze this',x=>x.label,x=>activateInsight('avoidAspect',x));
  chips('tl-theme-signals',p&&p.positiveThemes,false,p&&p.reviewCount?'No recurring theme signal yet':'Themes emerge from your reviews',x=>x.label,x=>activateInsight('focusTheme',x));
+ const tags=Object.entries(p&&p.tagWeights||{}).map(([label,value])=>({label,score:Number(value&&value.score)||0,count:Number(value&&value.evidence)||0}));
+ const positiveTags=tags.filter(x=>x.score>=.08).sort((a,b)=>b.score*Math.sqrt(b.count)-a.score*Math.sqrt(a.count)).slice(0,7);
+ const negativeTags=tags.filter(x=>x.score<=-.08).sort((a,b)=>a.score*Math.sqrt(a.count)-b.score*Math.sqrt(b.count)).slice(0,6);
+ chips('tl-positive-tags',positiveTags,false,state.library.length?'No positive tag pattern yet':'Import Letterboxd tags to analyze this',x=>x.label);
+ chips('tl-negative-tags',negativeTags,true,'No negative tag pattern yet',x=>x.label);
  $('tl-feedback-note').textContent=state.feedback.length?state.feedback.length+' feedback signals saved locally to tune future discovery.':'Your feedback on recommendations will help tune the next list.';
  metrics(p);
 }
