@@ -13,6 +13,7 @@ const state={
 };
 function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined&&text!==null)n.textContent=String(text);return n;}
 function readArray(key){try{const x=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(x)?x:[];}catch(_){return[];}}
+function read(key,fallback){try{const value=localStorage.getItem(key);return value===null?fallback:value;}catch(_){return fallback;}}
 function safeStore(key,value){try{localStorage.setItem(key,JSON.stringify(value));return true;}catch(e){console.warn('[Taste Lab] Could not save',key,e);return false;}}
 function setStatus(message,tone){const n=$('tl-status');n.replaceChildren();if(tone!=='error')n.appendChild(el('span','tl-live-dot'));n.appendChild(el('span','',message));n.classList.toggle('tl-status-warning',tone==='warning');n.classList.toggle('tl-status-error',tone==='error');}
 function toast(message){const n=$('tl-toast');n.textContent=message;n.classList.add('is-visible');clearTimeout(state.toastTimer);state.toastTimer=setTimeout(()=>n.classList.remove('is-visible'),2800);}
