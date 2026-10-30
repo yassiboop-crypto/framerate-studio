@@ -1654,6 +1654,7 @@ const App = {
           uri: '',
           rating: null,
           liked: false,
+          watchlisted: false,
           rewatch: false,
           watchedDate: '',
           review: '',
@@ -1672,6 +1673,7 @@ const App = {
 
           const csvFilesOrder = [
             'watched.csv',
+            'watchlist.csv',
             'ratings.csv',
             'diary.csv',
             'reviews.csv',
@@ -1686,13 +1688,15 @@ const App = {
             if (zipEntry) {
               const csvContent = await zipEntry.async('string');
               const isLikesFile = targetPath.includes('likes/');
-              this.mergeCsvIntoMap(csvContent, recordsMap, getOrCreateRecord, isLikesFile);
+              const isWatchlistFile = targetPath === 'watchlist.csv';
+              this.mergeCsvIntoMap(csvContent, recordsMap, getOrCreateRecord, isLikesFile, isWatchlistFile);
             }
           }
         } else if (lowerName.endsWith('.csv')) {
           const csvContent = await file.text();
           const isLikesFile = lowerName.includes('like');
-          this.mergeCsvIntoMap(csvContent, recordsMap, getOrCreateRecord, isLikesFile);
+          const isWatchlistFile = lowerName.includes('watchlist');
+          this.mergeCsvIntoMap(csvContent, recordsMap, getOrCreateRecord, isLikesFile, isWatchlistFile);
         }
       }
 
@@ -1784,7 +1788,7 @@ const App = {
     return rows;
   },
 
-  mergeCsvIntoMap(csvText, recordsMap, getOrCreateRecord, isLikesFile = false) {
+  mergeCsvIntoMap(csvText, recordsMap, getOrCreateRecord, isLikesFile = false, isWatchlistFile = false) {
     const rows = this.parseCsvRowsRfc4180(csvText);
     if (rows.length < 2) return;
 
@@ -1816,9 +1820,8 @@ const App = {
         if (!isNaN(val) && val > 0) rec.rating = val;
       }
 
-      if (isLikesFile) {
-        rec.liked = true;
-      }
+      if (isLikesFile) rec.liked = true;
+      if (isWatchlistFile) rec.watchlisted = true;
 
       if (idxRewatch !== -1 && (r[idxRewatch] || '').toLowerCase() === 'yes') {
         rec.rewatch = true;
