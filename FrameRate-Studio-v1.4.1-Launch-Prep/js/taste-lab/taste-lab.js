@@ -327,27 +327,44 @@ function chooseTmdbMovieLogo(details,movie){
  });
  return candidates.length?'https://image.tmdb.org/t/p/original'+candidates[0].file_path:'';
 }
+async function fetchFanartLogoForId(lookupId,movie){
+ const id=String(lookupId||'').trim();
+ if(!id)return'';
+ try{
+  const data=await proxy('fanart',{id});
+  const logo=chooseFanartMovieLogo(data,movie);
+  if(logo)return logo;
+ }catch(error){
+  console.debug('[Taste Lab] Fanart lookup failed for '+id+':',error&&error.message||error);
+ }
+ const key=String(read('fr_key_fanart','')||'').trim();
+ if(key){
+  try{
+   const response=await fetch('https://webservice.fanart.tv/v3/movies/'+encodeURIComponent(id)+'?api_key='+encodeURIComponent(key),{headers:{Accept:'application/json'}});
+   if(response.ok){
+    const data=await response.json();
+    const logo=chooseFanartMovieLogo(data,movie);
+    if(logo)return logo;
+   }
+  }catch(error){console.debug('[Taste Lab] Direct Fanart fallback failed:',error&&error.message||error);}
+ }
+ return'';
+}
 async function requestFanartMovieLogo(movie){
  const id=String(movie&&movie.id||'').trim();
  if(!id)return'';
- let data=null;
- try{data=await proxy('fanart',{id});}catch(_){}
- if(!data){
-  const key=String(read('fr_key_fanart','')||'').trim();
-  if(key){
-   try{
-    const response=await fetch('https://webservice.fanart.tv/v3/movies/'+encodeURIComponent(id)+'?api_key='+encodeURIComponent(key),{headers:{Accept:'application/json'}});
-    if(response.ok)data=await response.json();
-   }catch(_){}
-  }
+ const directLogo=await fetchFanartLogoForId(id,movie);
+ if(directLogo)return directLogo;
+ let details=null;
+ try{details=await proxy('details',{id});}catch(error){
+  console.debug('[Taste Lab] TMDB logo metadata lookup failed:',error&&error.message||error);
  }
- const fanartLogo=chooseFanartMovieLogo(data,movie);
- if(fanartLogo)return fanartLogo;
- // TMDB's appended images.logos provide a no-extra-key fallback when Fanart has no entry.
- try{
-  const details=await proxy('details',{id});
-  return chooseTmdbMovieLogo(details,movie);
- }catch(_){return'';}
+ const imdbId=String(details&&details.external_ids&&details.external_ids.imdb_id||details&&details.imdb_id||movie&&movie.imdb_id||'').trim();
+ if(imdbId&&imdbId!==id){
+  const imdbLogo=await fetchFanartLogoForId(imdbId,movie);
+  if(imdbLogo)return imdbLogo;
+ }
+ return chooseTmdbMovieLogo(details,movie);
 }
 function drainFanartLogoQueue(){
  while(fanartLogoActive<3&&fanartLogoQueue.length){
@@ -373,6 +390,45 @@ function getFanartMovieLogo(movie){
  }});
  drainFanartLogoQueue();
  return pending;
+}
+function appendMatchBreakdown(body,movie){
+ const parts=movie&&movie._scoreParts||{};
+ const signals=[
+  ['Genre alignment',parts.genre],
+  ['Theme overlap',parts.theme],
+  ['Letterboxd tags',parts.tags],
+  ['Audience quality',parts.quality]
+ ].filter(item=>Number.isFinite(Number(item[1])));
+ if(!signals.length)return;
+ const panel=el('section','tl-match-panel');
+ const heading=el('div','tl-match-heading');
+ heading.appendChild(el('span','tl-match-kicker','TASTE MATCH ANALYSIS'));
+ heading.appendChild(el('strong','','Why this film fits'));
+ panel.appendChild(heading);
+ const grid=el('div','tl-match-grid');
+ signals.forEach(([label,raw])=>{
+  const value=Math.max(0,Math.min(1,Number(raw)||0));
+  const row=el('div','tl-match-row');
+  const top=el('div','tl-match-row-top');
+  top.appendChild(el('span','',label));
+  top.appendChild(el('strong','',Math.round(value*100)+'%'));
+  row.appendChild(top);
+  const track=el('div','tl-match-track');
+  const fill=el('span','tl-match-fill');
+  fill.style.width=Math.round(value*100)+'%';
+  track.appendChild(fill);
+  row.appendChild(track);
+  grid.appendChild(row);
+ });
+ panel.appendChild(grid);
+ const positive=Array.isArray(movie._positiveGenres)?movie._positiveGenres.slice(0,2):[];
+ if(positive.length){
+  const note=el('div','tl-match-note');
+  note.appendChild(el('span','tl-match-note-mark','+'));
+  note.appendChild(el('span','','Your higher-rated genres: '+positive.join(' · ')));
+  panel.appendChild(note);
+ }
+ body.appendChild(panel);
 }
 function openFilmInStudio(m){
  const params=new URLSearchParams();
@@ -431,6 +487,7 @@ function filmCard(m){
  const genreChips=el('div','tl-film-genres');
  (m._tasteGenres||[]).slice(0,3).forEach(x=>genreChips.appendChild(el('span','tl-film-genre',x)));
  if(genreChips.childElementCount)body.appendChild(genreChips);
+ appendMatchBreakdown(body,m);
  const actions=el('div','tl-film-actions');
  const add=el('button','tl-feedback-button is-primary tl-add-cinema');
  add.type='button';add.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Add to My Cinema</span>';
