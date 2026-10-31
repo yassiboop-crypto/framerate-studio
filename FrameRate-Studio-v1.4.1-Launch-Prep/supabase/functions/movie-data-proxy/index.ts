@@ -162,6 +162,11 @@ Deno.serve(async (request) => {
         append_to_response: 'credits,images,videos,external_ids', include_image_language: 'en,null', language: 'en-US',
       });
       result = await cached(`details:v2:${id}`, 60 * 60_000, () => upstreamJson(requestInfo.url, requestInfo.headers));
+    } else if (action === 'images') {
+      const id = Number(body.id);
+      if (!Number.isInteger(id) || id <= 0) return json({ error: 'A valid TMDB movie ID is required.' }, 400, origin);
+      const requestInfo = tmdbUrl(`movie/${id}/images`, { include_image_language: 'en,null' });
+      result = await cached(`images:v1:${id}:en,null`, 60 * 60_000, () => upstreamJson(requestInfo.url, requestInfo.headers));
     } else if (action === 'popular') {
       const page = Math.min(20, Math.max(1, Number(body.page) || 1));
       const requestInfo = tmdbUrl('movie/popular', { language: 'en-US', page });
