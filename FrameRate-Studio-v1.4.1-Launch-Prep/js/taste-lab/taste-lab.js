@@ -354,23 +354,33 @@ async function fetchFanartLogoForId(lookupId,movie){
 async function requestFanartMovieLogo(movie){
  const id=String(movie&&movie.id||'').trim();
  if(!id)return'';
+ // First use Fanart's direct TMDB lookup, which is the same source used by Studio.
  const directLogo=await fetchFanartLogoForId(id,movie);
  if(directLogo)return directLogo;
+
+ // The details action already requests credits, images, videos and external_ids.
+ // Read its logo collection before relying on the newer standalone /images action.
  let details=null;
  try{details=await proxy('details',{id});}catch(error){
   console.debug('[Taste Lab] TMDB logo metadata lookup failed:',error&&error.message||error);
  }
+ const embeddedTmdbLogo=chooseTmdbMovieLogo(details&&details.images,movie);
+ if(embeddedTmdbLogo)return embeddedTmdbLogo;
+
+ // Fanart can also index a title under its IMDb identifier.
  const imdbId=String(details&&details.external_ids&&details.external_ids.imdb_id||details&&details.imdb_id||movie&&movie.imdb_id||'').trim();
  if(imdbId&&imdbId!==id){
   const imdbLogo=await fetchFanartLogoForId(imdbId,movie);
   if(imdbLogo)return imdbLogo;
  }
+
+ // Last fallback for deployments where the details response omitted images.
  try{
   const images=await proxy('images',{id});
   const tmdbLogo=chooseTmdbMovieLogo(images,movie);
   if(tmdbLogo)return tmdbLogo;
  }catch(error){
-  console.debug('[Taste Lab] Direct TMDB logo-image lookup failed:',error&&error.message||error);
+  console.debug('[Taste Lab] Standalone TMDB logo lookup unavailable:',error&&error.message||error);
  }
  console.info('[Taste Lab] No clear logo was indexed for:',String(movie&&movie.title||id),{tmdbId:id,imdbId});
  return '';
