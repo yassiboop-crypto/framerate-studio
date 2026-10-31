@@ -6,7 +6,7 @@ const IMPRESSIONS_KEY='fr_taste_impressions_v1';
 const CURSOR_KEY='fr_taste_catalogue_cursor_v1';
 const CURRENT_BATCH_KEY='fr_taste_current_batch_v1';
 const MAX_PAGES=500, PAGES_PER_REFRESH=4, MAX_IMPRESSIONS=350, $=id=>document.getElementById(id);
-const fanartLogoCache=new Map(),fanartLogoPending=new Map(),fanartLogoQueue=[];
+const tasteVisualCache=new Map(),tasteVisualPending=new Map(),tasteVisualQueue=[];
 let fanartLogoActive=0;
 const state={
  library:[],watchlist:[],feedback:[],impressions:[],profile:null,candidates:[],mode:'balanced',
@@ -351,70 +351,104 @@ async function fetchFanartLogoForId(lookupId,movie){
  }
  return'';
 }
-async function requestFanartMovieLogo(movie){
- const id=String(movie&&movie.id||'').trim();
- if(!/^\d+$/.test(id))return'';
-
- // Match the proven FrameRate Studio path exactly: TMDB details -> images.logos[0].
- // Studio uses the w500 image variant, so Taste Lab uses the same URL format.
- let details=null;
+function trustedTasteImageUrl(value){
+ const raw=String(value||'').trim();
+ if(!raw)return'';
  try{
-  details=await proxy('details',{id});
-  const firstLogo=Array.isArray(details&&details.images&&details.images.logos)
-   ?details.images.logos.find(item=>item&&typeof item.file_path==='string'&&item.file_path.startsWith('/'))
-   :null;
-  if(firstLogo)return 'https://image.tmdb.org/t/p/w500'+firstLogo.file_path;
- }catch(error){
-  console.debug('[Taste Lab] TMDB details/logo lookup failed:',error&&error.message||error);
- }
-
- // Fanart is the fallback, using both identifiers where available.
- const directFanartLogo=await fetchFanartLogoForId(id,movie);
- if(directFanartLogo)return directFanartLogo;
-
- const imdbId=String(details&&details.external_ids&&details.external_ids.imdb_id||details&&details.imdb_id||movie&&movie.imdb_id||'').trim();
- if(imdbId&&imdbId!==id){
-  const imdbFanartLogo=await fetchFanartLogoForId(imdbId,movie);
-  if(imdbFanartLogo)return imdbFanartLogo;
- }
-
- // Last-resort TMDB images endpoint for older details responses without an images block.
- try{
-  const images=await proxy('images',{id});
-  const tmdbLogo=chooseTmdbMovieLogo(images,movie);
-  if(tmdbLogo)return tmdbLogo;
- }catch(error){
-  console.debug('[Taste Lab] Standalone TMDB logo lookup unavailable:',error&&error.message||error);
- }
-
- console.info('[Taste Lab] No clear logo is available for:',String(movie&&movie.title||id),{tmdbId:id,imdbId});
- return '';
+  const url=new URL(raw);
+  const host=url.hostname.toLowerCase();
+  if(url.protocol!=='https:')return'';
+  if(host==='image.tmdb.org'||host==='fanart.tv'||host.endsWith('.fanart.tv'))return url.href;
+ }catch(_){}
+ return'';
 }
-function drainFanartLogoQueue(){
- while(fanartLogoActive<3&&fanartLogoQueue.length){
-  const job=fanartLogoQueue.shift();fanartLogoActive++;
-  requestFanartMovieLogo(job.movie).then(url=>job.resolve(url||''),()=>job.resolve('')).finally(()=>{
-   fanartLogoActive--;drainFanartLogoQueue();
+function tmdbImageUrl(path,size){
+ const value=String(path||'').trim();
+ if(!value.startsWith('/'))return'';
+ return 'https://image.tmdb.org/t/p/'+size+value;
+}
+function applyTasteCardBackdrop(node,value){
+ const url=trustedTasteImageUrl(value);
+ if(!node||!url)return false;
+ node.style.setProperty('--tl-card-backdrop','url('+JSON.stringify(url)+')');
+ node.classList.add('has-film-backdrop');
+ return true;
+}
+async function requestTasteMovieVisuals(movie){
+ const id=String(movie&&movie.id||'').trim();
+ const fallbackBackdrop=tmdbImageUrl(movie&&movie.backdrop_path,'w1280');
+ if(!/^\d+$/.test(id))return{logo:'',backdrop:fallbackBackdrop};
+
+ // Reuse FrameRate Studio's proven movie-details pipeline. It resolves TMDB
+ // details, clear logos and Fanart visuals using the same credentials and proxy.
+ if(window.Api&&typeof window.Api.getMovieDetails==='function'){
+  try{
+   const studioItem={
+    id:Number(id),source:'tmdb',title:String(movie.title||''),
+    year:String(movie.release_date||'').slice(0,4),
+    poster:tmdbImageUrl(movie.poster_path,'w500'),
+    backdrop:fallbackBackdrop
+   };
+   const details=await window.Api.getMovieDetails(studioItem);
+   const logo=trustedTasteImageUrl(details&&details.clearLogo);
+   const backdrops=Array.isArray(details&&details.backdrops)?details.backdrops:[];
+   const backdrop=backdrops.map(trustedTasteImageUrl).find(Boolean)||
+    trustedTasteImageUrl(details&&details.backdrop)||fallbackBackdrop;
+   if(logo||backdrop)return{logo,backdrop};
+  }catch(error){
+   console.debug('[Taste Lab] FrameRate Studio visual pipeline failed; using local fallback:',error&&error.message||error);
+  }
+ }
+
+ // Standalone fallback for older browsers/builds where the shared Studio API
+ // is not loaded or a title lookup fails.
+ let details=null;
+ try{details=await proxy('details',{id});}catch(error){
+  console.debug('[Taste Lab] TMDB details lookup failed:',error&&error.message||error);
+ }
+ const tmdbLogo=chooseTmdbMovieLogo(details&&details.images,movie);
+ const tmdbBackdrop=Array.isArray(details&&details.images&&details.images.backdrops)
+  ?details.images.backdrops.map(item=>tmdbImageUrl(item&&item.file_path,'w1280')).find(Boolean)
+  :'';
+ const externalId=String(details&&details.external_ids&&details.external_ids.imdb_id||details&&details.imdb_id||movie&&movie.imdb_id||'').trim();
+ let fanartLogo='';
+ if(!tmdbLogo){
+  fanartLogo=await fetchFanartLogoForId(id,movie);
+  if(!fanartLogo&&externalId&&externalId!==id)fanartLogo=await fetchFanartLogoForId(externalId,movie);
+ }
+ let backdrop=tmdbBackdrop||fallbackBackdrop;
+ if(!backdrop){
+  const fanartBackdrops=details&&details.moviebackground;
+  if(Array.isArray(fanartBackdrops))backdrop=fanartBackdrops.map(item=>trustedTasteImageUrl(item&&item.url)).find(Boolean)||'';
+ }
+ return{logo:trustedTasteImageUrl(tmdbLogo||fanartLogo),backdrop:trustedTasteImageUrl(backdrop)};
+}
+function drainTasteVisualQueue(){
+ while(fanartLogoActive<3&&tasteVisualQueue.length){
+  const job=tasteVisualQueue.shift();fanartLogoActive++;
+  requestTasteMovieVisuals(job.movie).then(value=>job.resolve(value||{logo:'',backdrop:''}),()=>job.resolve({logo:'',backdrop:''})).finally(()=>{
+   fanartLogoActive--;drainTasteVisualQueue();
   });
  }
 }
-function getFanartMovieLogo(movie){
+function getTasteMovieVisuals(movie){
  const id=String(movie&&movie.id||'').trim();
- if(!id)return Promise.resolve('');
- if(fanartLogoCache.has(id))return Promise.resolve(fanartLogoCache.get(id)||'');
- if(fanartLogoPending.has(id))return fanartLogoPending.get(id);
+ if(!id)return Promise.resolve({logo:'',backdrop:''});
+ if(tasteVisualCache.has(id))return Promise.resolve(tasteVisualCache.get(id));
+ if(tasteVisualPending.has(id))return tasteVisualPending.get(id);
  let finish;
  const pending=new Promise(resolve=>{finish=resolve;});
- fanartLogoPending.set(id,pending);
- fanartLogoQueue.push({movie,resolve:url=>{
-  const safeUrl=String(url||'');
-  fanartLogoCache.set(id,safeUrl);
-  fanartLogoPending.delete(id);
-  finish(safeUrl);
+ tasteVisualPending.set(id,pending);
+ tasteVisualQueue.push({movie,resolve:value=>{
+  const safeValue={logo:trustedTasteImageUrl(value&&value.logo),backdrop:trustedTasteImageUrl(value&&value.backdrop)};
+  tasteVisualCache.set(id,safeValue);
+  tasteVisualPending.delete(id);
+  finish(safeValue);
  }});
- drainFanartLogoQueue();
+ drainTasteVisualQueue();
  return pending;
 }
+
 function appendMatchBreakdown(body,movie){
  const parts=movie&&movie._scoreParts||{};
  const signals=[
@@ -489,6 +523,8 @@ function filmCard(m){
  card.appendChild(art);
 
  const body=el('div','tl-film-content');
+ const initialBackdrop=tmdbImageUrl(m.backdrop_path,'w1280');
+ applyTasteCardBackdrop(body,initialBackdrop);
  const title=el('button','tl-film-title tl-film-title-link');
  title.type='button';title.setAttribute('aria-label','Open '+String(m.title||'film')+' in FrameRate Studio');
  const titleFallback=el('span','tl-film-title-fallback',m.title);
@@ -499,8 +535,9 @@ function filmCard(m){
  title.appendChild(titleFallback);title.appendChild(clearLogo);
  title.addEventListener('click',()=>openFilmInStudio(m));body.appendChild(title);
  title.dataset.logoStatus='loading';
- getFanartMovieLogo(m).then(url=>{
-  if(url){clearLogo.src=url;return;}
+ getTasteMovieVisuals(m).then(visuals=>{
+  if(visuals&&visuals.backdrop)applyTasteCardBackdrop(body,visuals.backdrop);
+  if(visuals&&visuals.logo){clearLogo.src=visuals.logo;return;}
   title.dataset.logoStatus='not-found';
  });
  const meta=el('div','tl-film-meta');
