@@ -353,7 +353,7 @@ async function fetchFanartLogoForId(lookupId,movie){
 }
 async function requestFanartMovieLogo(movie){
  const id=String(movie&&movie.id||'').trim();
- if(!/^\\d+$/.test(id))return'';
+ if(!/^\d+$/.test(id))return'';
 
  // Match the proven FrameRate Studio path exactly: TMDB details -> images.logos[0].
  // Studio uses the w500 image variant, so Taste Lab uses the same URL format.
