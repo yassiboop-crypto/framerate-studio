@@ -358,8 +358,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{ou
   align-items:center;
   justify-content:flex-start;
   min-width:0;
-  min-height:72px;
-  max-height:84px;
+  min-height:92px;
+  max-height:104px;
   overflow:hidden;
   margin:0;
   color:#f4f6f7;
@@ -393,8 +393,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{ou
   display:none;
   width:auto;
   height:auto;
-  max-width:min(100%,360px);
-  max-height:68px;
+  max-width:min(100%,460px);
+  max-height:92px;
   object-fit:contain;
   object-position:left center;
   filter:drop-shadow(0 3px 9px rgba(0,0,0,.38));
