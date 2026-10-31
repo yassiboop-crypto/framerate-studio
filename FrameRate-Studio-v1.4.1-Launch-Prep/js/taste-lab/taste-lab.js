@@ -413,16 +413,11 @@ function filmCard(m){
  const titleFallback=el('span','tl-film-title-fallback',m.title);
  const clearLogo=el('img','tl-film-clearlogo');
  clearLogo.alt=String(m.title||'Film')+' clear logo';clearLogo.loading='lazy';clearLogo.decoding='async';clearLogo.referrerPolicy='no-referrer';
+ clearLogo.addEventListener('load',()=>title.classList.add('has-clearlogo'));
  clearLogo.addEventListener('error',()=>{title.classList.remove('has-clearlogo');clearLogo.removeAttribute('src');});
  title.appendChild(titleFallback);title.appendChild(clearLogo);
  title.addEventListener('click',()=>openFilmInStudio(m));body.appendChild(title);
- getFanartMovieLogo(m).then(url=>{
-  if(!url)return;
-  // Apply the visibility class before setting src; this also works for cached images
-  // when the card is still being assembled off-DOM.
-  title.classList.add('has-clearlogo');
-  clearLogo.src=url;
- });
+ getFanartMovieLogo(m).then(url=>{if(url)clearLogo.src=url;});
  const meta=el('div','tl-film-meta');
  meta.innerHTML='<span class="tl-film-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z" fill="currentColor"/></svg> '+(Number(m.vote_average)?Number(m.vote_average).toFixed(1):'—')+' / 10 TMDB</span>';
  if(Number(m.vote_count)>0){const votes=el('span','tl-film-votes');votes.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 19c.5-3 2.4-4.5 5.5-4.5s5 1.5 5.5 4.5M16 5.5a3 3 0 0 1 0 5.8M17 14c2.1.5 3.2 2 3.5 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg> '+Number(m.vote_count).toLocaleString();meta.appendChild(votes);}
