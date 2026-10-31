@@ -364,7 +364,12 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{ou
   min-height:540px;
   overflow:visible;
   padding:30px 34px 27px 20px;
-  background:linear-gradient(105deg,#141c22 0%,#141c22 54%,#111920 100%);
+  position:relative;
+  isolation:isolate;
+  background-color:#141c22;
+  background-image:linear-gradient(105deg,rgba(20,28,34,.95) 0%,rgba(20,28,34,.84) 54%,rgba(17,25,32,.93) 100%),var(--tl-card-backdrop,none);
+  background-size:cover;
+  background-position:center;
 }
 .tl-film-title{
   display:flex;
@@ -645,7 +650,7 @@ body.tl-modal-open{overflow:hidden}
 [dir=rtl] .tl-film-title-link{justify-content:flex-end}
 [dir=rtl] .tl-film-clearlogo{object-position:right center}
 [dir=rtl] .tl-film-art{grid-column:2}
-[dir=rtl] .tl-film-content{grid-column:1;background:linear-gradient(255deg,#141c22 0%,#141c22 54%,#111920 100%)}
+[dir=rtl] .tl-film-content{grid-column:1;background-image:linear-gradient(255deg,rgba(20,28,34,.95) 0%,rgba(20,28,34,.84) 54%,rgba(17,25,32,.93) 100%),var(--tl-card-backdrop,none)}
 [dir=rtl] .tl-film-art:after{background:linear-gradient(270deg,transparent 40%,rgba(20,28,34,.72) 77%,#141c22 100%),linear-gradient(0deg,rgba(5,8,11,.42),transparent 34%)}
 [dir=rtl] .tl-film-art-badge{left:auto;right:15px}
 [dir=rtl] .tl-film-year-badge{right:auto;left:15px}
