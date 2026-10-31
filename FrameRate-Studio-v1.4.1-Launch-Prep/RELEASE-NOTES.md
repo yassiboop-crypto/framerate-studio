@@ -13,4 +13,4 @@ No SQL migration or Supabase Edge Function behavior change is required by these 
 
 ## Validation status
 
-The source includes a reproducible npm run check command. The hosted CI result must be checked on the pull request before merging. Live Cloudflare/Supabase/provider and PC/mobile tests remain required.
+The source includes a reproducible `npm run check` command. GitHub Actions passed the JavaScript checks, all 10 tests, and Deno type-checks for both Supabase Edge Functions on PR head `e138f0280a67b1cd568d1bddeba24c8ec0e9cb90`. Live Cloudflare/Supabase/provider and PC/mobile tests remain required.
