@@ -6,6 +6,8 @@ const IMPRESSIONS_KEY='fr_taste_impressions_v1';
 const CURSOR_KEY='fr_taste_catalogue_cursor_v1';
 const CURRENT_BATCH_KEY='fr_taste_current_batch_v1';
 const MAX_PAGES=500, PAGES_PER_REFRESH=4, MAX_IMPRESSIONS=350, $=id=>document.getElementById(id);
+const fanartLogoCache=new Map(),fanartLogoPending=new Map(),fanartLogoQueue=[];
+let fanartLogoActive=0;
 const state={
  library:[],watchlist:[],feedback:[],impressions:[],profile:null,candidates:[],mode:'balanced',
  filters:{title:'',genre:'any',excludeGenre:'any',yearFrom:'any',yearTo:'any',rating:'0',votes:'0',runtimeMin:'0',runtimeMax:'0',language:'any',focusAspect:'any',avoidAspect:'any',focusTheme:'any',sort:'fit'},
@@ -283,6 +285,71 @@ function posterImage(movie,art){
  };
  art.appendChild(node);
 }
+function chooseFanartMovieLogo(data,movie){
+ const original=String(movie&&movie.original_language||'').toLowerCase();
+ const pickFrom=images=>{
+  if(!Array.isArray(images))return'';
+  const candidates=images.filter(item=>{
+   if(!item||!item.url)return false;
+   const lang=String(item.lang||'').toLowerCase();
+   if(lang==='00')return false;
+   try{const url=new URL(item.url);return url.protocol==='https:'&&url.hostname==='assets.fanart.tv';}catch(_){return false;}
+  });
+  candidates.sort((a,b)=>{
+   const rank=item=>{
+    const lang=String(item.lang||'').toLowerCase();
+    if(lang==='en')return 0;
+    if(original&&lang===original)return 1;
+    if(!lang)return 2;
+    return 3;
+   };
+   return rank(a)-rank(b)||(Number(b.likes)||0)-(Number(a.likes)||0);
+  });
+  return candidates.length?String(candidates[0].url):'';
+ };
+ return pickFrom(data&&data.hdmovielogo)||pickFrom(data&&data.movielogo)||'';
+}
+async function requestFanartMovieLogo(movie){
+ const id=String(movie&&movie.id||'').trim();
+ if(!id)return'';
+ let data=null;
+ try{data=await proxy('fanart',{id});}catch(_){}
+ if(!data){
+  const key=String(read('fr_key_fanart','')||'').trim();
+  if(key){
+   try{
+    const response=await fetch('https://webservice.fanart.tv/v3/movies/'+encodeURIComponent(id)+'?api_key='+encodeURIComponent(key),{headers:{Accept:'application/json'}});
+    if(response.ok)data=await response.json();
+   }catch(_){}
+  }
+ }
+ return chooseFanartMovieLogo(data,movie);
+}
+function drainFanartLogoQueue(){
+ while(fanartLogoActive<3&&fanartLogoQueue.length){
+  const job=fanartLogoQueue.shift();fanartLogoActive++;
+  requestFanartMovieLogo(job.movie).then(url=>job.resolve(url||''),()=>job.resolve('')).finally(()=>{
+   fanartLogoActive--;drainFanartLogoQueue();
+  });
+ }
+}
+function getFanartMovieLogo(movie){
+ const id=String(movie&&movie.id||'').trim();
+ if(!id)return Promise.resolve('');
+ if(fanartLogoCache.has(id))return Promise.resolve(fanartLogoCache.get(id)||'');
+ if(fanartLogoPending.has(id))return fanartLogoPending.get(id);
+ let finish;
+ const pending=new Promise(resolve=>{finish=resolve;});
+ fanartLogoPending.set(id,pending);
+ fanartLogoQueue.push({movie,resolve:url=>{
+  const safeUrl=String(url||'');
+  fanartLogoCache.set(id,safeUrl);
+  fanartLogoPending.delete(id);
+  finish(safeUrl);
+ }});
+ drainFanartLogoQueue();
+ return pending;
+}
 function openFilmInStudio(m){
  const params=new URLSearchParams();
  params.set('frMovieId',String(m.id||''));
@@ -317,8 +384,16 @@ function filmCard(m){
  card.appendChild(art);
 
  const body=el('div','tl-film-content');
- const title=el('button','tl-film-title tl-film-title-link',m.title);
- title.type='button';title.addEventListener('click',()=>openFilmInStudio(m));body.appendChild(title);
+ const title=el('button','tl-film-title tl-film-title-link');
+ title.type='button';title.setAttribute('aria-label','Open '+String(m.title||'film')+' in FrameRate Studio');
+ const titleFallback=el('span','tl-film-title-fallback',m.title);
+ const clearLogo=el('img','tl-film-clearlogo');
+ clearLogo.alt=String(m.title||'Film')+' clear logo';clearLogo.loading='lazy';clearLogo.decoding='async';clearLogo.referrerPolicy='no-referrer';
+ clearLogo.addEventListener('load',()=>{if(clearLogo.isConnected)title.classList.add('has-clearlogo');});
+ clearLogo.addEventListener('error',()=>{title.classList.remove('has-clearlogo');clearLogo.removeAttribute('src');});
+ title.appendChild(titleFallback);title.appendChild(clearLogo);
+ title.addEventListener('click',()=>openFilmInStudio(m));body.appendChild(title);
+ getFanartMovieLogo(m).then(url=>{if(url&&clearLogo.isConnected)clearLogo.src=url;});
  const meta=el('div','tl-film-meta');
  meta.innerHTML='<span class="tl-film-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z" fill="currentColor"/></svg> '+(Number(m.vote_average)?Number(m.vote_average).toFixed(1):'—')+' / 10 TMDB</span>';
  if(Number(m.vote_count)>0){const votes=el('span','tl-film-votes');votes.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 19c.5-3 2.4-4.5 5.5-4.5s5 1.5 5.5 4.5M16 5.5a3 3 0 0 1 0 5.8M17 14c2.1.5 3.2 2 3.5 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg> '+Number(m.vote_count).toLocaleString();meta.appendChild(votes);}
