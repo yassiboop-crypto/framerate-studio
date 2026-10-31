@@ -5,7 +5,7 @@
 <meta name="description" content="FrameRate Taste Lab uses your Letterboxd ratings and reviews to help discover films you may like next.">
 <title>Taste Lab — FrameRate Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Alexandria:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/taste-lab.css?v=20261031-poster-match-05">
+<link rel="stylesheet" href="css/taste-lab.css?v=20261031-trailer-hover-06">
 </head>
 <body>
 <a class="tl-skip" href="#main-content">Skip to main content</a>
@@ -118,11 +118,20 @@
 </main><div id="tl-trailer-modal" class="tl-trailer-modal tl-hidden" role="dialog" aria-modal="true" aria-labelledby="tl-trailer-title">
   <button type="button" class="tl-trailer-backdrop" data-tl-close-trailer aria-label="Close trailer"></button>
   <section class="tl-trailer-dialog">
-    <header class="tl-trailer-dialog-header"><h2 id="tl-trailer-title">Film trailer</h2><button type="button" class="tl-trailer-close" data-tl-close-trailer aria-label="Close trailer">×</button></header>
+    <header class="tl-trailer-dialog-header">
+      <div class="tl-trailer-heading-copy">
+        <span class="tl-trailer-eyebrow"><i aria-hidden="true"></i> FRAME RATE · TRAILER ROOM</span>
+        <h2 id="tl-trailer-title">Film trailer</h2>
+      </div>
+      <button type="button" class="tl-trailer-close" data-tl-close-trailer aria-label="Close trailer">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        <span>CLOSE</span>
+      </button>
+    </header>
     <div class="tl-trailer-screen"><iframe id="tl-trailer-frame" class="tl-hidden" src="about:blank" title="Movie trailer" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe><div id="tl-trailer-notice" class="tl-trailer-notice" role="status">Finding an official trailer…</div></div>
     <footer class="tl-trailer-dialog-footer"><span>Trailer availability depends on the video publisher.</span><a id="tl-trailer-youtube" href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer" class="tl-trailer-youtube tl-hidden">Open on YouTube ↗</a></footer>
   </section>
 </div>
 <div id="tl-toast" class="tl-toast" role="status" aria-live="polite"></div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/supabase-config.js"></script><script src="js/auth.js"></script><script src="js/library-store.js"></script><script src="js/taste-lab/review-analyzer.js"></script><script src="js/taste-lab/profile-builder.js"></script><script src="js/taste-lab/recommender.js"></script><script src="js/taste-lab/ai-enhancer.js"></script><script src="js/taste-lab/taste-lab.js?v=20261031-poster-match-05"></script><script src="js/taste-lab/experience.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/supabase-config.js"></script><script src="js/auth.js"></script><script src="js/library-store.js"></script><script src="js/taste-lab/review-analyzer.js"></script><script src="js/taste-lab/profile-builder.js"></script><script src="js/taste-lab/recommender.js"></script><script src="js/taste-lab/ai-enhancer.js"></script><script src="js/taste-lab/taste-lab.js?v=20261031-trailer-hover-06"></script><script src="js/taste-lab/experience.js"></script>
 </body></html>
