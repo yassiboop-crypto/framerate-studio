@@ -2,6 +2,7 @@
 
 **Reviewed source:** GitHub main at 1bf8a18 (31 October 2026)  
 **Hardening branch:** chore/production-hardening-2026-10  
+**Validated PR head:** `e138f0280a67b1cd568d1bddeba24c8ec0e9cb90`  
 **Scope:** source code, account/data flow, Supabase SQL/functions, page assets, and deployment documentation.
 
 ## Changes in this hardening branch
@@ -24,7 +25,7 @@
 
 ## Remaining work before a public launch
 
-1. **Run and review CI:** the newly added workflow must pass on the pull request. This report does not claim a successful hosted CI run.
+1. **CI passed on the reviewed PR head:** GitHub Actions completed the JavaScript syntax checks, all 10 regression/contract tests, and Deno type-checking for both Supabase Edge Functions. Re-run the workflow for any later source changes.
 2. **Verify the live Cloudflare Worker settings:** the repository does not include a Wrangler configuration, so the Worker entry point/assets binding/name must be confirmed in Cloudflare before changing deploy configuration.
 3. **Security Content Policy:** no strict Content-Security-Policy was added. The current pages use inline scripts/handlers and several third-party script, font, image, video and API origins. A strict CSP should follow a deliberate migration to external scripts/handlers and a measured origin inventory, then be tested in report-only mode before enforcement.
 4. **Complete the HTML/data-sink review:** multiple innerHTML sites remain. The reviewed sample uses escaping or fixed SVG/markup in many places, but this branch does not claim an exhaustive XSS audit.
@@ -34,4 +35,4 @@
 
 ## Validation boundary
 
-Static code checks and regression tests are defined in npm run check. Deno type-checking is configured in GitHub Actions. These checks do not prove that the production Worker, Supabase project, TMDB/Fanart secrets, provider quotas, YouTube embeds, or all mobile browsers work end to end.
+Static code checks, 10 regression/contract tests, and Deno type-checking passed in GitHub Actions on the PR head listed above. These checks do not prove that the production Worker, Supabase project, TMDB/Fanart secrets, provider quotas, YouTube embeds, or all mobile browsers work end to end.
