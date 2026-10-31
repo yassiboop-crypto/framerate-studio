@@ -483,6 +483,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{ou
 .tl-match-fill{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--tl-cyan),var(--tl-green));box-shadow:0 0 12px rgba(103,200,214,.22)}
 .tl-match-note{display:flex;align-items:center;gap:7px;color:#b9d8d5;font-size:9px;line-height:1.45}
 .tl-match-note-mark{display:grid;place-items:center;width:17px;height:17px;flex:0 0 auto;border-radius:5px;background:rgba(112,214,165,.1);color:var(--tl-green);font-weight:900}
+.tl-match-caveat{margin:0;color:#778992;font-size:7px;line-height:1.4}
 .tl-film-actions{
   display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));
