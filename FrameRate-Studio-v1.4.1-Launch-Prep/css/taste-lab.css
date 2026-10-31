@@ -267,7 +267,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{ou
 .tl-film-reason span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;min-width:0}
 .tl-film-genres{display:flex;flex-wrap:wrap;gap:4px;max-height:21px;overflow:hidden;margin-top:6px}
 .tl-film-genre{padding:3px 5px;border:1px solid rgba(255,255,255,.08);border-radius:5px;color:#9aa9b2;font-size:7px;line-height:1.3;white-space:nowrap}
-.tl-film-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;min-width:0;margin-top:auto;padding-top:7px}
+.tl-film-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;min-width:0;margin-top:auto;padding-top:7px}
 .tl-feedback-button{
   display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:0;min-height:26px;padding:5px 6px;
   border:1px solid #2b3942;border-radius:6px;background:rgba(255,255,255,.025);
