@@ -428,6 +428,7 @@ function appendMatchBreakdown(body,movie){
   note.appendChild(el('span','','Your higher-rated genres: '+positive.join(' · ')));
   panel.appendChild(note);
  }
+ panel.appendChild(el('p','tl-match-caveat','Relative signal strength from your ratings and reviews — not a probability.'));
  body.appendChild(panel);
 }
 function openFilmInStudio(m){
