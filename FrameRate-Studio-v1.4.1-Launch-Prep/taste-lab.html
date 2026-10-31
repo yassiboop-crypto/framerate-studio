@@ -53,27 +53,66 @@
   <p id="tl-tune-status" class="tl-tune-status" role="status" aria-live="polite">Choose your preferences. A new recommendation batch will be searched when you continue.</p>
 </section>
 
-<section class="tl-workspace" data-tl-panel="discover"><div class="tl-feed-panel">
-<div class="tl-panel-heading"><div><div class="tl-section-kicker"><span class="tl-section-dot"></span> YOUR DISCOVERY FEED</div><h2 data-tl-i18n="discoveryTitle">Films worth meeting next</h2><p data-tl-i18n="watchedFiltered">Previously watched films and watchlist entries are filtered out.</p></div><button id="tl-refresh-recommendations" type="button" class="tl-icon-button" title="Refresh recommendations" aria-label="Refresh recommendations">↻</button></div>
-<div class="tl-discovery-toolbar"><div class="tl-mode-label">DISCOVERY MODE</div><div class="tl-mode-switch" role="group" aria-label="Discovery mode"><button type="button" data-mode="comfort" aria-pressed="false"><span>◉</span> Comfort</button><button type="button" data-mode="balanced" class="is-active" aria-pressed="true"><span>◈</span> Balanced</button><button type="button" data-mode="explore" aria-pressed="false"><span>✧</span> Explore</button></div></div>
-<div id="tl-status" class="tl-status-line" role="status" aria-live="polite"><span class="tl-spinner"></span><span>Reading your library and preparing recommendations…</span></div>
-<div class="tl-results-heading"><span id="tl-results-count">Preparing your feed</span><span class="tl-results-source">MOVIE CATALOGUE · TMDB</span></div>
-<div id="tl-results-grid" class="tl-results-grid"><div class="tl-loading-card"><span class="tl-spinner"></span><span>Building your personal film map…</span></div><div class="tl-loading-card"><span class="tl-spinner"></span><span>Looking for unseen films…</span></div></div>
-<p class="tl-score-note" data-tl-i18n="scoreNote">Taste fit is a relative ranking signal, not a probability. This first version ranks films from a limited popular-film catalogue.</p><div class="tl-step-actions tl-step-actions-end"><button type="button" id="tl-back-tune" class="tl-button-quiet" data-tl-i18n="backPreferences">← Adjust preferences</button></div>
-</div></section>
-<section class="tl-profile-layout" data-tl-panel="profile tune"><aside class="tl-sidebar">
-<section class="tl-side-card"><div class="tl-side-heading"><span class="tl-side-symbol">◈</span><div><span class="tl-section-kicker" data-tl-i18n="patterns">THE PATTERNS</span><h3 data-tl-i18n="tasteDNA">Your Taste DNA</h3></div></div><p class="tl-side-intro" data-tl-i18n="profileCaveat">Signals inferred from your history. They are clues, not permanent labels.</p>
-<div class="tl-signal-block"><div class="tl-signal-title"><span class="tl-signal-positive">+</span><span data-tl-i18n="higherGenres">Genres you rate higher</span></div><div id="tl-primary-genres" class="tl-chip-list"><span class="tl-chip-muted">Waiting for ratings…</span></div></div>
-<div class="tl-signal-block"><div class="tl-signal-title"><span class="tl-signal-negative">−</span><span data-tl-i18n="cautiousGenres">Genres to use cautiously</span></div><div id="tl-avoid-genres" class="tl-chip-list"><span class="tl-chip-muted">More history needed</span></div></div>
-<div class="tl-signal-block"><div class="tl-signal-title"><span class="tl-signal-positive">+</span><span>Letterboxd tags you rate higher</span></div><div id="tl-positive-tags" class="tl-chip-list"><span class="tl-chip-muted">Import tagged films to see patterns</span></div></div>
-<div class="tl-signal-block"><div class="tl-signal-title"><span class="tl-signal-negative">−</span><span>Tags linked to lower ratings</span></div><div id="tl-negative-tags" class="tl-chip-list"><span class="tl-chip-muted">No negative tag pattern yet</span></div></div>
-<div id="tl-feedback-note" class="tl-feedback-note">Your feedback will help tune the next list.</div><button id="tl-reset-feedback" type="button" class="tl-text-button" data-tl-i18n="resetFeedback">Reset discovery feedback</button></section>
-<section class="tl-side-card"><div class="tl-side-heading"><span class="tl-side-symbol">⌁</span><div><span class="tl-section-kicker" data-tl-i18n="fromReviews">FROM YOUR REVIEWS</span><h3 data-tl-i18n="reviewSignals">What you respond to</h3></div></div>
-<div class="tl-signal-block"><div class="tl-signal-title"><span class="tl-signal-positive">+</span><span data-tl-i18n="praise">Elements you praise</span></div><div id="tl-loved-aspects" class="tl-chip-list"><span class="tl-chip-muted">No review signals yet</span></div></div>
-<div class="tl-signal-block"><div class="tl-signal-title"><span class="tl-signal-negative">−</span><span data-tl-i18n="criticisms">Recurring criticisms</span></div><div id="tl-criticized-aspects" class="tl-chip-list"><span class="tl-chip-muted">No review signals yet</span></div></div>
-<div class="tl-signal-block"><div class="tl-signal-title"><span class="tl-signal-theme">◇</span><span data-tl-i18n="themes">Themes that resonate</span></div><div id="tl-theme-signals" class="tl-chip-list"><span class="tl-chip-muted">No recurring themes yet</span></div></div><p class="tl-analysis-caveat">Review signals use a lightweight language heuristic. Sarcasm, irony and context can be misunderstood.</p></section>
-<section class="tl-side-card tl-privacy-card"><div class="tl-side-heading"><span class="tl-side-symbol">⌂</span><div><span class="tl-section-kicker" data-tl-i18n="yourData">YOUR DATA</span><h3 data-tl-i18n="privateAccount">Private by account</h3></div></div><p>By default, review text is analyzed in this browser. If you click Improve ranking with AI, up to 12 review excerpts and up to 18 current film summaries are sent to your selected AI provider for ranking. That provider processes the request under its own privacy terms. The local AI cache stores movie IDs, scores, reasons, and model metadata, not review text. Your imported library follows FrameRate’s existing sync settings.</p></section>
-</aside></section>
+<section class="tl-workspace tl-discovery-layout" data-tl-panel="discover">
+  <div class="tl-feed-panel">
+    <div class="tl-panel-heading tl-feed-heading">
+      <div>
+        <div class="tl-section-kicker"><span class="tl-section-dot"></span><span>PERSONAL CINEMA SELECTION</span></div>
+        <h2 data-tl-i18n="discoveryTitle">Films worth meeting next</h2>
+        <p data-tl-i18n="watchedFiltered">Previously watched films and watchlist entries are filtered out.</p>
+      </div>
+      <button id="tl-refresh-recommendations" type="button" class="tl-icon-button" title="Refresh recommendations" aria-label="Refresh recommendations">↻</button>
+    </div>
+    <div class="tl-discovery-toolbar">
+      <div class="tl-mode-copy"><span class="tl-mode-label">YOUR DISCOVERY MOOD</span><span class="tl-mode-caption">Choose how adventurous today's list should feel.</span></div>
+      <div class="tl-mode-switch" role="group" aria-label="Discovery mode">
+        <button type="button" data-mode="comfort" aria-pressed="false"><span>◉</span> Comfort</button>
+        <button type="button" data-mode="balanced" class="is-active" aria-pressed="true"><span>◈</span> Balanced</button>
+        <button type="button" data-mode="explore" aria-pressed="false"><span>✧</span> Explore</button>
+      </div>
+    </div>
+    <div id="tl-status" class="tl-status-line" role="status" aria-live="polite"><span class="tl-spinner"></span><span>Reading your library and preparing recommendations…</span></div>
+    <div class="tl-results-heading">
+      <span id="tl-results-count">Preparing your feed</span>
+      <span class="tl-results-source">FILM DISCOVERY <i></i> TMDB</span>
+    </div>
+    <div id="tl-results-grid" class="tl-results-grid">
+      <div class="tl-loading-card"><span class="tl-spinner"></span><span>Building your personal film map…</span></div>
+      <div class="tl-loading-card"><span class="tl-spinner"></span><span>Looking for unseen films…</span></div>
+    </div>
+    <p class="tl-score-note" data-tl-i18n="scoreNote">Taste fit is a relative ranking signal, not a probability. Recommendations combine multiple catalogue lanes with your taste signals.</p>
+    <div class="tl-feed-bottom"><span class="tl-bottom-mark">FR / TASTE LAB</span><button type="button" id="tl-back-tune" class="tl-button-quiet" data-tl-i18n="backPreferences">← Adjust preferences</button></div>
+  </div>
+  <aside class="tl-discovery-rail" aria-label="Your taste profile">
+    <section class="tl-side-card tl-dna-card">
+      <div class="tl-rail-heading">
+        <div><span class="tl-section-kicker"><span class="tl-section-dot"></span><span data-tl-i18n="patterns">THE PATTERNS</span></span><h3 data-tl-i18n="tasteDNA">Your Taste DNA</h3></div>
+        <span class="tl-rail-index">01</span>
+      </div>
+      <p class="tl-side-intro" data-tl-i18n="profileCaveat">Signals inferred from your history. They are clues, not permanent labels.</p>
+      <div class="tl-signal-block"><div class="tl-signal-title"><span class="tl-signal-positive">+</span><span data-tl-i18n="higherGenres">Genres you rate higher</span></div><div id="tl-primary-genres" class="tl-chip-list"><span class="tl-chip-muted">Waiting for ratings…</span></div></div>
+      <div class="tl-signal-block"><div class="tl-signal-title"><span class="tl-signal-negative">−</span><span data-tl-i18n="cautiousGenres">Genres to use cautiously</span></div><div id="tl-avoid-genres" class="tl-chip-list"><span class="tl-chip-muted">More history needed</span></div></div>
+      <div class="tl-signal-block"><div class="tl-signal-title"><span class="tl-signal-positive">+</span><span>Letterboxd tags you rate higher</span></div><div id="tl-positive-tags" class="tl-chip-list"><span class="tl-chip-muted">Import tagged films to see patterns</span></div></div>
+      <div class="tl-signal-block"><div class="tl-signal-title"><span class="tl-signal-negative">−</span><span>Tags linked to lower ratings</span></div><div id="tl-negative-tags" class="tl-chip-list"><span class="tl-chip-muted">No negative tag pattern yet</span></div></div>
+      <div id="tl-feedback-note" class="tl-feedback-note">Your feedback will help tune the next list.</div>
+      <button id="tl-reset-feedback" type="button" class="tl-text-button" data-tl-i18n="resetFeedback">Reset discovery feedback</button>
+    </section>
+    <section class="tl-side-card tl-review-card">
+      <div class="tl-rail-heading">
+        <div><span class="tl-section-kicker"><span class="tl-section-dot tl-dot-cyan"></span><span data-tl-i18n="fromReviews">FROM YOUR REVIEWS</span></span><h3 data-tl-i18n="reviewSignals">What you respond to</h3></div>
+        <span class="tl-rail-index">02</span>
+      </div>
+      <div class="tl-signal-block"><div class="tl-signal-title"><span class="tl-signal-positive">+</span><span data-tl-i18n="praise">Elements you praise</span></div><div id="tl-loved-aspects" class="tl-chip-list"><span class="tl-chip-muted">No review signals yet</span></div></div>
+      <div class="tl-signal-block"><div class="tl-signal-title"><span class="tl-signal-negative">−</span><span data-tl-i18n="criticisms">Recurring criticisms</span></div><div id="tl-criticized-aspects" class="tl-chip-list"><span class="tl-chip-muted">No review signals yet</span></div></div>
+      <div class="tl-signal-block"><div class="tl-signal-title"><span class="tl-signal-theme">◇</span><span data-tl-i18n="themes">Themes that resonate</span></div><div id="tl-theme-signals" class="tl-chip-list"><span class="tl-chip-muted">No recurring themes yet</span></div></div>
+      <p class="tl-analysis-caveat">Review signals use a lightweight language heuristic. Sarcasm, irony and context can be misunderstood.</p>
+    </section>
+    <section class="tl-side-card tl-privacy-card">
+      <div class="tl-privacy-heading"><span class="tl-privacy-mark">⌂</span><div><span class="tl-section-kicker" data-tl-i18n="yourData">YOUR DATA</span><h3 data-tl-i18n="privateAccount">Private by account</h3></div></div>
+      <p>Review text stays in this browser unless you choose AI ranking. Only selected review excerpts and current film summaries are sent to your chosen AI provider when you press the AI button.</p>
+    </section>
+  </aside>
+</section>
 <div class="tl-step-actions tl-step-actions-end" data-tl-panel="tune"><button type="button" id="tl-tune-back" class="tl-button-quiet" data-tl-i18n="backProfile">← Back to profile</button><button type="button" id="tl-tune-discover-bottom" class="tl-button-primary" data-tl-i18n="showRecommendations">Show recommendations →</button></div>
 <footer class="tl-footer"><a href="index.html" data-tl-i18n="backStudio">← Back to FrameRate Studio</a><span>FRAME RATE · TASTE LAB <i></i> A NEW LENS ON YOUR CINEMA</span></footer>
 </main><div id="tl-trailer-modal" class="tl-trailer-modal tl-hidden" role="dialog" aria-modal="true" aria-labelledby="tl-trailer-title">
