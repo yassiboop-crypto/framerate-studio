@@ -1858,21 +1858,7 @@ Each section must contain real review text, not placeholder instructions. Do not
         return { ...out, _agentLabel: `Live: OpenRouter (${m})` };
       }
     } catch (err) {
-      // If Gemini failed and user ALSO has a working Groq key, try Groq silently before falling back to local!
-      if (targetAgent === 'gemini' && this.hasAvailableCredential('groq')) {
-        for (const backupModel of ['qwen/qwen3.8-27b', 'openai/gpt-oss-120b', 'openai/gpt-oss-20b']) {
-          try {
-            const groqBackup = await callOpenAiCompatible(
-              'https://api.groq.com/openai/v1/chat/completions',
-              keys.groq,
-              backupModel,
-              'groq'
-            );
-            return { ...groqBackup, _agentLabel: `Live: Groq (Auto-Backup: ${backupModel})` };
-          } catch (backupError) {}
-        }
-      }
-
+      // Do not send the user's prompt to a different provider without an explicit choice.
       const localOut = this.synthesizeLocalReviews(state, lang);
       return {
         ...localOut,

@@ -1,12 +1,13 @@
 # FrameRate Studio v1.4.1 — Production launch checklist
 
-This package prepares the current static app for deployment to Netlify and documents the remaining production steps. It does **not** deploy the site or change your Supabase project automatically.
+The current production site is served from the Cloudflare Worker at https://framerate-studio.ybenlahcen7.workers.dev/. This guide covers the current Cloudflare path first and keeps Netlify as an alternative/legacy hosting option. It does **not** deploy the site or change your Supabase project automatically.
 
 ## Important project facts
 
-- Frontend: static HTML/CSS/JavaScript. Netlify publish directory is the project root (`.`).
+- Frontend: static HTML/CSS/JavaScript in this release folder.
+- Current hosting: Cloudflare Worker `framerate-studio` at `https://framerate-studio.ybenlahcen7.workers.dev/`.
 - Backend: Supabase project `FrameRate` (`lzrpvnwuiqlntpfuqfrz`) with database schema and two Edge Functions.
-- `js/supabase-config.js` is intentionally a placeholder in this package. Add only the Supabase project URL and public publishable/anon key there. Never put a `service_role`/secret key in browser files.
+- In this repository, `js/supabase-config.js` already contains the public Supabase project URL and publishable key for this app. Preserve it for this project. Never put a `service_role`/secret key or an AI/TMDB/Fanart provider key in browser files.
 - `movie-data-proxy` uses exact-origin allow-listing. Its production origin must be added to `FRAMERATE_ALLOWED_ORIGINS` before the deployed site can search movies.
 - The app loads Tailwind, Supabase JS, JSZip and fonts from third-party CDNs. Internet access is required for those assets. Tailwind's browser CDN is convenient but not ideal for a strict production Content Security Policy; see the hardening section below.
 
@@ -53,7 +54,22 @@ npx supabase functions deploy movie-data-proxy
 
 The checked-in `supabase/config.toml` sets `credential-vault` to `verify_jwt = true` and `movie-data-proxy` to `verify_jwt = false`; the latter supports guest movie search, while the function applies its own origin and rate-limit checks.
 
-## C. Deploy to Netlify
+## C. Cloudflare Workers (current production path)
+
+The live site currently uses the Worker URL above. The repository's release folder contains the site assets and Supabase source, but it does not contain a checked-in Wrangler configuration file. Do not invent a Worker name, compatibility date, asset binding, entry point, or deploy command: those settings must match the already-working Worker.
+
+1. In Cloudflare Dashboard, open **Workers & Pages → framerate-studio → Settings → Builds**.
+2. Verify the connected Git repository is `yassiboop-crypto/framerate-studio`, the production branch is `main`, and the root directory points to `FrameRate-Studio-v1.4.1-Launch-Prep`.
+3. Record the current build, deploy and preview commands before changing them. Keep the currently working deploy command and existing Worker configuration unchanged during this hardening release.
+4. Once the root directory is confirmed, set the optional **Build command** to `npm run check`. This is a read-only quality gate: it checks JavaScript syntax, local asset references and regression tests before the existing deployment command runs.
+5. Use the Cloudflare preview build for this branch/PR and test the preview URL before merging to `main`. Do not promote a preview manually until account, search, AI, imports, watchlist and mobile checks have passed.
+6. After merge, confirm the new production build in Cloudflare's build history, then smoke-test the production URL. Keep Supabase production secrets in Supabase and Cloudflare runtime secrets only where the current Worker actually requires them.
+
+Cloudflare Workers Builds reads the repository, branch, root directory, build command and deploy command from the Worker's **Settings → Builds** screen. A commit to the connected production branch triggers a build/deploy; a non-production branch can use the configured preview command. The Worker name must remain consistent with the active Wrangler configuration. See the [Workers Builds configuration guide](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/) and [Workers Builds overview](https://developers.cloudflare.com/workers/ci-cd/builds/).
+
+**Important:** this repository intentionally does not add a guessed `wrangler.toml` in this change. First confirm the current Worker runtime/build settings in Cloudflare. A mismatched Worker name or guessed assets configuration could replace or break the live deployment.
+
+## D. Netlify alternative (not the current production path)
 
 1. Create a new site in Netlify and connect a private Git repository, or use Netlify Drop for a one-off preview. Git deployment is recommended for future updates.
 2. Publish directory: `.` (the root containing `index.html`). No build command is required for the current static app.
@@ -63,7 +79,7 @@ The checked-in `supabase/config.toml` sets `credential-vault` to `verify_jwt = t
 6. If email confirmation or password recovery is enabled, configure a real email/SMTP provider and test confirmation/recovery links. Configure OAuth callback/origins separately if Google login is enabled.
 7. Do not deploy a configured `js/supabase-config.js` containing any private key. The publishable key is intended to be public; RLS and server-side checks must protect data.
 
-## D. Production smoke test (desktop and mobile)
+## E. Production smoke test (desktop and mobile)
 
 - Open the production URL over HTTPS and check there are no failed scripts/assets in browser DevTools.
 - Guest mode: search films, load details/posters, open trailers, and check the movie proxy logs.
@@ -75,9 +91,9 @@ The checked-in `supabase/config.toml` sets `credential-vault` to `verify_jwt = t
 - In a staging project, verify Credential Vault rate limits: status 120/min, save 10/min, delete 20/min, model list 45/min, and chat 30/min per account/action. Confirm excessive requests return HTTP 429 and ordinary sign-in/key-management flows remain below the limit.
 - Test mobile viewport: header/navigation, modal scrolling, search suggestions, Watchlist List/Grid, profile stats, game UI, and cursor fallback. Touch devices should retain native touch behavior.
 - Check dark/light theme contrast, keyboard focus, reduced-motion preference, and browser console/network errors.
-- Check Netlify deploy logs and Supabase Edge Function logs. Do not share secrets when reporting an error.
+- Check Cloudflare Workers build/deploy logs and Supabase Edge Function logs. Do not share secrets when reporting an error.
 
-## E. Security and release limitations to address before a public launch
+## F. Security and release limitations to address before a public launch
 
 - A source review found the site loads Tailwind from `cdn.tailwindcss.com`, plus JSZip, Supabase JS and fonts from CDNs. For a stricter production deployment, bundle Tailwind and pin/self-host dependencies where practical.
 - `netlify.toml` adds baseline response headers but intentionally does not add a Content-Security-Policy because inline scripts and third-party origins need a tested migration first. Do not copy a strict CSP from a template without testing all features.

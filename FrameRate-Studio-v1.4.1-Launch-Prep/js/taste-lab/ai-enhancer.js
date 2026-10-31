@@ -90,28 +90,27 @@ function validateRankings(raw,candidateIds){
 }
 async function rank(context){
  const primary=resolveProvider();
- if(primary.error==='missing-provider')throw new Error('Choose Gemini, Groq, or OpenAI and save at least one working API key in the main Studio API Vault first.');
+ if(primary.error==='missing-provider')throw new Error('Choose Gemini, Groq, OpenAI or OpenRouter and save a working API key in the main Studio API Vault first.');
  const primaryInput=buildInput(context,primary),cached=readCache();
  if(cached&&cached.key===primaryInput.key)return {rankings:cached.rankings,cacheKey:primaryInput.key,provider:cached.provider,model:cached.model,cached:true,createdAt:cached.createdAt};
 
- const configs=[primary,...PROVIDERS.filter(provider=>provider!==primary.provider&&hasCredential(provider)).map(resolveProviderFor).filter(config=>!config.error)];
+ // Respect the selected provider. Do not send review excerpts to another provider silently.
+ const configs=[primary];
  const failures=[];
  for(const config of configs){
   try{
    const text=await providerText(config,primaryInput.prompt);
    const parsed=parseJson(text),rankings=validateRankings(parsed,primaryInput.candidateIds);
-   // Keep the cache key anchored to the user's selected provider/context so a
-   // successful fallback can still be applied to the exact current candidate set.
    const record={version:1,key:primaryInput.key,provider:config.provider,model:config.model,createdAt:new Date().toISOString(),rankings};
    storeCache(record);
-   return {rankings,cacheKey:primaryInput.key,provider:config.provider,model:config.model,cached:false,fallback:config.provider!==primary.provider,createdAt:record.createdAt};
+   return {rankings,cacheKey:primaryInput.key,provider:config.provider,model:config.model,cached:false,createdAt:record.createdAt};
   }catch(error){
    const detail=String(error&&error.message||'request failed').replace(/\s+/g,' ').slice(0,150);
    failures.push(config.provider+' ('+config.model+'): '+detail);
    console.warn('[Taste Lab AI] Provider attempt failed:',config.provider,detail);
   }
  }
- throw new Error('All saved AI providers failed. '+failures.join(' | '));
+ throw new Error('Selected AI provider failed. '+failures.join(' | '));
 }
 function getCached(context){try{const config=resolveProvider();if(config.error)return null;const input=buildInput(context,config),record=readCache();return record&&record.key===input.key?{rankings:record.rankings,cacheKey:record.key,provider:record.provider,model:record.model,cached:true,createdAt:record.createdAt}:null;}catch(_){return null;}}
 function applyRanking(movies,context,result){

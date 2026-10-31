@@ -21,12 +21,16 @@
     'fr_lb_zip_library',
     'fr_watchlist',
     'fr_watchlist_events',
-    'fr_workspace_draft'
+    'fr_workspace_draft',
+    'fr_taste_feedback_v1',
+    'fr_taste_filters_v1',
+    'fr_taste_language'
   ];
   const PROFILE_LOCAL_KEYS = new Set([
     ...STORAGE_KEYS,
-    // Taste Lab cache and feedback are account-scoped locally, not cloud-synced yet.
+    // Derived Taste Lab caches remain local; feedback, filters and language sync by account.
     'fr_taste_profile_v1',
+    'fr_taste_language',
     'fr_taste_feedback_v1',
     'fr_taste_filters_v1',
     'fr_taste_impressions_v1',
@@ -518,7 +522,7 @@
       // are still merged. Same-browser offline edits prefer local values.
       const merged = { ...localPayload, ...remotePayload };
       if (preferLocalScalars) Object.assign(merged, remotePayload, localPayload);
-      const arrayKeys = ['fr_saved_reviews', 'fr_lb_zip_library', 'fr_watchlist'];
+      const arrayKeys = ['fr_saved_reviews', 'fr_lb_zip_library', 'fr_watchlist', 'fr_taste_feedback_v1'];
       arrayKeys.forEach(key => {
         const local = this.parseArray(localPayload[key]);
         const remote = this.parseArray(remotePayload[key]);
@@ -527,7 +531,21 @@
           ? item => `${String(item?.title || '').trim().toLowerCase()}|${String(item?.year || '')}|${String(item?.review || '').trim()}`
           : item => `${String(item?.title || '').trim().toLowerCase()}|${String(item?.year || '').trim()}`;
         let result = [];
-        if (key === 'fr_watchlist') {
+        if (key === 'fr_taste_feedback_v1') {
+          // Keep the latest feedback action for each film when multiple devices sync.
+          const byFilm = new Map();
+          [...remote, ...local].forEach(item => {
+            if (!item || typeof item !== 'object') return;
+            const signature = keyOf(item);
+            if (!signature) return;
+            const current = byFilm.get(signature);
+            const stamp = entry => Date.parse(entry?.updatedAt || '') || 0;
+            if (!current || stamp(item) >= stamp(current)) byFilm.set(signature, item);
+          });
+          result = Array.from(byFilm.values()).sort((a, b) =>
+            (Date.parse(a?.updatedAt || '') || 0) - (Date.parse(b?.updatedAt || '') || 0)
+          );
+        } else if (key === 'fr_watchlist') {
           // For a duplicate film, retain the status with the newest update time
           // so a status change made on another device does not get overwritten
           // by an older local cache. Ties prefer the local copy.
@@ -553,7 +571,7 @@
           });
         }
         // Match the local app's current library limits.
-        const limit = key === 'fr_saved_reviews' ? 100 : (key === 'fr_watchlist' ? 1000 : 3000);
+        const limit = key === 'fr_saved_reviews' ? 100 : (key === 'fr_watchlist' || key === 'fr_taste_feedback_v1' ? 1000 : 3000);
         merged[key] = JSON.stringify(result.slice(0, limit));
       });
 

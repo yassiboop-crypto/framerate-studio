@@ -230,7 +230,8 @@ const App = {
               <input id="rssUsernameInput" type="text" placeholder="Username (e.g. 3b3aliy)..." onkeydown="if(event.key==='Enter') App.fetchRssDiary()" class="flex-1 theme-input rounded-xl px-3 py-2 text-xs focus:outline-none">
               <button onclick="App.fetchRssDiary()" class="px-3.5 py-2 rounded-xl bg-frOrange text-white font-extrabold text-xs hover:opacity-90 transition shrink-0">RSS</button>
             </div>
-            <p class="text-[10px] theme-text-muted leading-tight">Note: RSS only shows dated Diary logs. Use .ZIP for all Watched, Ratings &amp; Reviews.</p>
+            <p class="text-[10px] theme-text-muted leading-tight">RSS only shows dated Diary logs. Use .ZIP for your complete Watched, Ratings &amp; Reviews history.</p>
+            <p class="text-[10px] theme-text-muted leading-relaxed">RSS uses third-party CORS relay services to read a public feed. Relay operators may see the feed URL and request metadata. Use ZIP import when you prefer not to send a feed URL to those services.</p>
           </div>
         </div>
 
