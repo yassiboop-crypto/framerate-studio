@@ -523,7 +523,7 @@ function filmCard(m){
  card.appendChild(art);
 
  const body=el('div','tl-film-content');
- const initialBackdrop=tmdbImageUrl(m.backdrop_path,'w1280');
+ const initialBackdrop=tmdbImageUrl(m.backdrop_path,'w1280')||tmdbImageUrl(m.poster_path,'w500');
  applyTasteCardBackdrop(body,initialBackdrop);
  const title=el('button','tl-film-title tl-film-title-link');
  title.type='button';title.setAttribute('aria-label','Open '+String(m.title||'film')+' in FrameRate Studio');
