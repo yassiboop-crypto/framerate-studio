@@ -1,4 +1,15 @@
-# FrameRate Studio — v1.3.8 Arcade QA + Cinematic Polish
+## Current release and maintenance status
+
+This folder contains the current FrameRate Studio browser app and Supabase backend source (v1.4.1). Historical notes below describe earlier feature releases and may refer to older hosting instructions; use the current deployment guide for the live Cloudflare Worker.
+
+- Production site: https://framerate-studio.ybenlahcen7.workers.dev/
+- Deployment guide: DEPLOYMENT-GUIDE.md (Cloudflare Workers + Supabase)
+- Quality checks: run `npm run check` from this folder.
+- Supabase browser config: this repo contains the public project URL and publishable key for the configured project. Preserve it. Never insert a service-role or secret key into browser files.
+- Legal drafts are in the repository-level legal folder and are not linked from the public UI; fill and review them before publication.
+
+---
+
 
 This v1.3.8 release is an Arcade gameplay and visual-quality hotfix for the existing FrameRate Studio app. It retains the Watchlist, Profile & Stats, Trailer, AI review tools, dual themes, and the five-choice cursor suite from the previous releases.
 
@@ -70,9 +81,9 @@ This v1.3.8 release is an Arcade gameplay and visual-quality hotfix for the exis
 
 ## Important deployment status
 
-**For a fresh installation:** remote Supabase functions cannot be connected from this ZIP alone. You must configure the project URL/public key, run `supabase/schema.sql`, enter server-side secrets, and deploy the two functions before account-key persistence and shared movie data will work. The downloadable `js/supabase-config.js` deliberately starts with placeholders.
+**For a fresh installation:** remote Supabase functions cannot be connected from this ZIP alone. You must configure the project URL/public key, run `supabase/schema.sql`, enter server-side secrets, and deploy the two functions before account-key persistence and shared movie data will work. This repository's `js/supabase-config.js` contains the public Supabase project URL and publishable key for the configured project.
 
-**For an existing working installation upgrading only to v1.3.8:** preserve/copy your real `js/supabase-config.js`. This Arcade-only release does not require new SQL or Edge Function redeployment; the backend setup below is for a fresh installation or when you are specifically repairing an older backend configuration.
+**For this configured FrameRate repository:** preserve the existing `js/supabase-config.js` public project URL and publishable key when updating files. This Arcade-only release does not require new SQL or Edge Function redeployment; the backend setup below is for a fresh installation or when you are specifically repairing an older backend configuration.
 
 ## 1. Configure the front-end Supabase client
 

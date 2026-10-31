@@ -1,0 +1,31 @@
+name: FrameRate quality checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-quality:
+    name: JavaScript, contracts and Supabase function checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run project checks and regression tests
+        working-directory: FrameRate-Studio-v1.4.1-Launch-Prep
+        run: npm run check
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+      - name: Type-check Supabase Edge Functions
+        working-directory: FrameRate-Studio-v1.4.1-Launch-Prep
+        run: deno check --no-lock supabase/functions/credential-vault/index.ts supabase/functions/movie-data-proxy/index.ts

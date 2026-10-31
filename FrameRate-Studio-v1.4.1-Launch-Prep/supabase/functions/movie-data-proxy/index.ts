@@ -64,14 +64,16 @@ async function consumeRateLimit(identity: string, max = 120) {
   if (error) throw new Error('The movie proxy rate-limit table/function is missing. Run supabase/schema.sql.');
   if (data !== true) throw new Error('RATE_LIMITED');
 }
-function tmdbUrl(path: string, params: Record<string, string | number | boolean | undefined> = {}) {
+function tmdbUrl(path: string, params: Record<string, string | number | boolean | undefined> = {}): { url: string; headers: Record<string, string> } {
   const token = Deno.env.get('TMDB_API_READ_ACCESS_TOKEN') || '';
   const apiKey = Deno.env.get('TMDB_API_KEY') || '';
   if (!token && !apiKey) throw new Error('The site owner has not configured the TMDB server secret yet.');
   const url = new URL(`https://api.themoviedb.org/3/${path.replace(/^\/+/, '')}`);
   for (const [key, value] of Object.entries(params)) if (value !== undefined && String(value)) url.searchParams.set(key, String(value));
   if (!token && apiKey) url.searchParams.set('api_key', apiKey);
-  return { url: url.toString(), headers: token ? { Authorization: `Bearer ${token}`, Accept: 'application/json' } : { Accept: 'application/json' } };
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return { url: url.toString(), headers };
 }
 async function upstreamJson(url: string, headers: Record<string, string> = {}): Promise<any> {
   const response = await requestTimeout(url, { headers });

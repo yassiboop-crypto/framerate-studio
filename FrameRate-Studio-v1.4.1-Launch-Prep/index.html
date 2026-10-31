@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="description" content="FrameRate Studio is a cinematic workspace for film discovery, rating, personal reviews, Letterboxd imports, AI-assisted writing and shareable cine-cards." />
   <meta name="theme-color" content="#07080a" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <meta name="color-scheme" content="dark light" />
   <title>FrameRate Studio — Every Film. A Point Of View.</title>
 
@@ -54,7 +55,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
       
       <!-- Logo: FrameRate -->
-      <div class="flex items-center gap-3 cursor-pointer select-none group" onclick="App.goToStep(1)">
+      <button type="button" aria-label="FrameRate Studio home" class="flex items-center gap-3 cursor-pointer select-none group bg-transparent border-0 p-0 text-left" onclick="App.goToStep(1)">
         <svg class="h-9 sm:h-10 w-auto transition-transform duration-300 group-hover:scale-[1.02]" viewBox="0 0 485 110" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="5" y="10" width="34" height="90" rx="6" class="logo-filmstrip"/>
           <rect x="13" y="18" width="18" height="12" rx="3" class="logo-sprocket"/>
@@ -74,7 +75,7 @@
             </linearGradient>
           </defs>
         </svg>
-      </div>
+      </button>
 
       <!-- Navigation Step Tabs -->
       <nav class="flex items-center gap-1.5 p-1 rounded-2xl theme-nav-pill text-xs font-bold overflow-x-auto max-w-full">
@@ -1013,11 +1014,12 @@
   <script src="js/supabase-config.js"></script>
   <!-- Scripts -->
   <script src="js/i18n.js"></script>
-  <script src="js/api.js"></script>
-  <script src="js/auth.js"></script>
+  <script src="js/api.js?v=20261031-hardening-1"></script>
+  <script src="js/auth.js?v=20261031-hardening-1"></script>
   <script src="js/library-store.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/app.js?v=20261031-hardening-1"></script>
   <script src="js/workspace-persistence.js"></script>
   <script src="js/cinema-library.js"></script>
+  <script src="js/modal-accessibility.js?v=20261031-hardening-1"></script>
 </body>
 </html>
