@@ -353,28 +353,32 @@ async function fetchFanartLogoForId(lookupId,movie){
 }
 async function requestFanartMovieLogo(movie){
  const id=String(movie&&movie.id||'').trim();
- if(!id)return'';
- // First use Fanart's direct TMDB lookup, which is the same source used by Studio.
- const directLogo=await fetchFanartLogoForId(id,movie);
- if(directLogo)return directLogo;
+ if(!/^\\d+$/.test(id))return'';
 
- // The details action already requests credits, images, videos and external_ids.
- // Read its logo collection before relying on the newer standalone /images action.
+ // Match the proven FrameRate Studio path exactly: TMDB details -> images.logos[0].
+ // Studio uses the w500 image variant, so Taste Lab uses the same URL format.
  let details=null;
- try{details=await proxy('details',{id});}catch(error){
-  console.debug('[Taste Lab] TMDB logo metadata lookup failed:',error&&error.message||error);
+ try{
+  details=await proxy('details',{id});
+  const firstLogo=Array.isArray(details&&details.images&&details.images.logos)
+   ?details.images.logos.find(item=>item&&typeof item.file_path==='string'&&item.file_path.startsWith('/'))
+   :null;
+  if(firstLogo)return 'https://image.tmdb.org/t/p/w500'+firstLogo.file_path;
+ }catch(error){
+  console.debug('[Taste Lab] TMDB details/logo lookup failed:',error&&error.message||error);
  }
- const embeddedTmdbLogo=chooseTmdbMovieLogo(details&&details.images,movie);
- if(embeddedTmdbLogo)return embeddedTmdbLogo;
 
- // Fanart can also index a title under its IMDb identifier.
+ // Fanart is the fallback, using both identifiers where available.
+ const directFanartLogo=await fetchFanartLogoForId(id,movie);
+ if(directFanartLogo)return directFanartLogo;
+
  const imdbId=String(details&&details.external_ids&&details.external_ids.imdb_id||details&&details.imdb_id||movie&&movie.imdb_id||'').trim();
  if(imdbId&&imdbId!==id){
-  const imdbLogo=await fetchFanartLogoForId(imdbId,movie);
-  if(imdbLogo)return imdbLogo;
+  const imdbFanartLogo=await fetchFanartLogoForId(imdbId,movie);
+  if(imdbFanartLogo)return imdbFanartLogo;
  }
 
- // Last fallback for deployments where the details response omitted images.
+ // Last-resort TMDB images endpoint for older details responses without an images block.
  try{
   const images=await proxy('images',{id});
   const tmdbLogo=chooseTmdbMovieLogo(images,movie);
@@ -382,7 +386,8 @@ async function requestFanartMovieLogo(movie){
  }catch(error){
   console.debug('[Taste Lab] Standalone TMDB logo lookup unavailable:',error&&error.message||error);
  }
- console.info('[Taste Lab] No clear logo was indexed for:',String(movie&&movie.title||id),{tmdbId:id,imdbId});
+
+ console.info('[Taste Lab] No clear logo is available for:',String(movie&&movie.title||id),{tmdbId:id,imdbId});
  return '';
 }
 function drainFanartLogoQueue(){
@@ -488,7 +493,7 @@ function filmCard(m){
  title.type='button';title.setAttribute('aria-label','Open '+String(m.title||'film')+' in FrameRate Studio');
  const titleFallback=el('span','tl-film-title-fallback',m.title);
  const clearLogo=el('img','tl-film-clearlogo');
- clearLogo.alt=String(m.title||'Film')+' clear logo';clearLogo.loading='lazy';clearLogo.decoding='async';clearLogo.referrerPolicy='no-referrer';
+ clearLogo.alt=String(m.title||'Film')+' clear logo';clearLogo.loading='eager';clearLogo.decoding='async';clearLogo.referrerPolicy='no-referrer';
  clearLogo.addEventListener('load',()=>{title.classList.add('has-clearlogo');title.dataset.logoStatus='loaded';});
  clearLogo.addEventListener('error',()=>{title.classList.remove('has-clearlogo');title.dataset.logoStatus='image-error';clearLogo.removeAttribute('src');});
  title.appendChild(titleFallback);title.appendChild(clearLogo);
