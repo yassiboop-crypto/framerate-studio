@@ -346,10 +346,10 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{ou
   flex-direction:column;
   align-items:stretch;
   width:100%;
-  height:100%;
+  height:auto;
   min-width:0;
   min-height:540px;
-  overflow:hidden;
+  overflow:visible;
   padding:30px 34px 27px 20px;
   background:linear-gradient(105deg,#141c22 0%,#141c22 54%,#111920 100%);
 }
@@ -705,9 +705,9 @@ body.tl-modal-open{overflow:hidden}
   .tl-results-heading{font-size:9px}
   .tl-results-source{font-size:6px}
   .tl-results-grid{grid-template-columns:minmax(0,1fr);gap:13px}
-  .tl-film-card{grid-template-columns:166px minmax(0,1fr);grid-template-rows:249px;height:249px;min-height:249px}
-  .tl-film-art{width:100%!important;height:100%!important;min-height:249px!important}
-  .tl-film-content{height:auto;min-height:249px;padding:13px 13px 11px}
+  .tl-film-card{grid-template-columns:166px minmax(0,1fr);grid-template-rows:auto;height:auto;min-height:249px;align-items:start}
+  .tl-film-art{width:100%!important;height:249px!important;min-height:249px!important;align-self:start}
+  .tl-film-content{height:auto;min-height:249px;overflow:visible;padding:13px 13px 11px}
   .tl-film-title{font-size:17px;line-height:1.15}
   .tl-film-title{min-height:58px;max-height:66px}
   .tl-film-clearlogo{max-height:52px;max-width:min(100%,300px)}
@@ -761,9 +761,9 @@ body.tl-modal-open{overflow:hidden}
   .tl-filter-footer{flex-direction:column;align-items:stretch}
   .tl-results-heading{align-items:flex-start;font-size:8px}
   .tl-results-source{font-size:5px}
-  .tl-film-card{grid-template-columns:150px minmax(0,1fr);grid-template-rows:225px;height:225px;min-height:225px}
-  .tl-film-art{width:100%!important;height:100%!important;min-height:225px!important}
-  .tl-film-content{height:auto;min-height:225px;padding:10px 10px 9px}
+  .tl-film-card{grid-template-columns:150px minmax(0,1fr);grid-template-rows:auto;height:auto;min-height:225px;align-items:start}
+  .tl-film-art{width:100%!important;height:225px!important;min-height:225px!important;align-self:start}
+  .tl-film-content{height:auto;min-height:225px;overflow:visible;padding:10px 10px 9px}
   .tl-film-title{font-size:14px;line-height:1.15}
   .tl-film-title{min-height:48px;max-height:56px}
   .tl-film-clearlogo{max-height:44px}
