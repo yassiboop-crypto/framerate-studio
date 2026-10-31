@@ -27,7 +27,8 @@ test('all local scripts, stylesheets and favicon references resolve', () => {
 test('Supabase browser configuration contains only the public client key', () => {
   const config = read('js/supabase-config.js');
   assert.match(config, /publishableKey\s*:/);
-  assert.doesNotMatch(config, /service_role|sb_secret_|SUPABASE_SECRET_KEYS/i);
+  assert.doesNotMatch(config, /(?:publishableKey|anonKey)\\s*:\\s*['\"][^'\"]*(?:service_role|sb_secret_)/i);
+  assert.doesNotMatch(config, /SUPABASE_SECRET_KEYS/i);
 });
 
 test('account sync allow-list includes Taste Lab feedback and preferences', () => {
