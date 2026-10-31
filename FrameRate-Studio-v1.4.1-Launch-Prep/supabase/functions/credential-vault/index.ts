@@ -64,12 +64,17 @@ function b64Encode(bytes: Uint8Array): string {
 function b64Decode(value: string): Uint8Array {
   return Uint8Array.from(atob(value), (char) => char.charCodeAt(0));
 }
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy.buffer;
+}
 async function getEncryptionKey(): Promise<CryptoKey> {
   const encoded = Deno.env.get('FRAMERATE_CREDENTIALS_ENCRYPTION_KEY') || '';
   if (!encoded) throw new Error('The server-side credential encryption key is not configured.');
   const bytes = b64Decode(encoded);
   if (bytes.length !== 32) throw new Error('The credential encryption key must decode to exactly 32 bytes.');
-  return await crypto.subtle.importKey('raw', bytes, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+  return await crypto.subtle.importKey('raw', toArrayBuffer(bytes), { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
 }
 async function encryptSecret(secret: string) {
   const key = await getEncryptionKey();
@@ -80,7 +85,7 @@ async function encryptSecret(secret: string) {
 }
 async function decryptSecret(ciphertext: string, iv: string): Promise<string> {
   const key = await getEncryptionKey();
-  const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64Decode(iv) }, key, b64Decode(ciphertext));
+  const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: toArrayBuffer(b64Decode(iv)) }, key, toArrayBuffer(b64Decode(ciphertext)));
   return new TextDecoder().decode(plain);
 }
 function timeoutFetch(url: string, init: RequestInit = {}, timeoutMs = 20000): Promise<Response> {
@@ -224,7 +229,10 @@ Deno.serve(async (request) => {
       const { data, error } = await admin.from('framerate_user_credentials').select('provider').eq('user_id', userId);
       if (error) throw new Error('Credential table is missing. Run supabase/schema.sql.');
       const credentials = Object.fromEntries(PROVIDERS.map((provider) => [provider, false])) as Record<Provider, boolean>;
-      (data || []).forEach((row: any) => { if (isProvider(row.provider)) credentials[row.provider] = true; });
+      (data || []).forEach((row: { provider?: unknown }) => {
+        const provider = row?.provider;
+        if (isProvider(provider)) credentials[provider] = true;
+      });
       return json({ credentials }, 200, origin);
     }
 
