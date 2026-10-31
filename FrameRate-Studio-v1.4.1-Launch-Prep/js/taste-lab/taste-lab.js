@@ -11,7 +11,7 @@ let fanartLogoActive=0;
 const state={
  library:[],watchlist:[],feedback:[],impressions:[],profile:null,candidates:[],mode:'balanced',
  filters:{title:'',genre:'any',excludeGenre:'any',yearFrom:'any',yearTo:'any',rating:'0',votes:'0',runtimeMin:'0',runtimeMax:'0',language:'any',focusAspect:'any',avoidAspect:'any',focusTheme:'any',sort:'fit'},
- loadToken:0,toastTimer:null,trailerRequestId:0,activeAccountKey:null,aiBusy:false
+ loadToken:0,toastTimer:null,trailerRequestId:0,trailerTrigger:null,activeAccountKey:null,aiBusy:false
 };
 function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined&&text!==null)n.textContent=String(text);return n;}
 function readArray(key){try{const x=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(x)?x:[];}catch(_){return[];}}
@@ -311,8 +311,9 @@ function chooseFanartMovieLogo(data,movie){
  };
  return pickFrom(data&&data.hdmovielogo)||pickFrom(data&&data.movielogo)||'';
 }
-function chooseTmdbMovieLogo(details,movie){
- const logos=details&&details.images&&Array.isArray(details.images.logos)?details.images.logos:[];
+function chooseTmdbMovieLogo(images,movie){
+ const logos=Array.isArray(images&&images.logos)?images.logos:
+  (images&&images.images&&Array.isArray(images.images.logos)?images.images.logos:[]);
  const original=String(movie&&movie.original_language||'').toLowerCase();
  const candidates=logos.filter(item=>item&&typeof item.file_path==='string'&&item.file_path.startsWith('/'));
  candidates.sort((a,b)=>{
@@ -364,7 +365,16 @@ async function requestFanartMovieLogo(movie){
   const imdbLogo=await fetchFanartLogoForId(imdbId,movie);
   if(imdbLogo)return imdbLogo;
  }
- return chooseTmdbMovieLogo(details,movie);
+ try{
+  const images=await proxy('images',{id});
+  const tmdbLogo=chooseTmdbMovieLogo(images,movie);
+  if(tmdbLogo)return tmdbLogo;
+ }catch(error){
+  console.debug('[Taste Lab] Direct TMDB logo-image lookup failed:',error&&error.message||error);
+ }
+ console.info('[Taste Lab] No clear logo was indexed for:',String(movie&&movie.title||id),{tmdbId:id,imdbId});
+ return '';
+}
 }
 function drainFanartLogoQueue(){
  while(fanartLogoActive<3&&fanartLogoQueue.length){
@@ -470,11 +480,15 @@ function filmCard(m){
  const titleFallback=el('span','tl-film-title-fallback',m.title);
  const clearLogo=el('img','tl-film-clearlogo');
  clearLogo.alt=String(m.title||'Film')+' clear logo';clearLogo.loading='lazy';clearLogo.decoding='async';clearLogo.referrerPolicy='no-referrer';
- clearLogo.addEventListener('load',()=>title.classList.add('has-clearlogo'));
- clearLogo.addEventListener('error',()=>{title.classList.remove('has-clearlogo');clearLogo.removeAttribute('src');});
+ clearLogo.addEventListener('load',()=>{title.classList.add('has-clearlogo');title.dataset.logoStatus='loaded';});
+ clearLogo.addEventListener('error',()=>{title.classList.remove('has-clearlogo');title.dataset.logoStatus='image-error';clearLogo.removeAttribute('src');});
  title.appendChild(titleFallback);title.appendChild(clearLogo);
  title.addEventListener('click',()=>openFilmInStudio(m));body.appendChild(title);
- getFanartMovieLogo(m).then(url=>{if(url)clearLogo.src=url;});
+ title.dataset.logoStatus='loading';
+ getFanartMovieLogo(m).then(url=>{
+  if(url){clearLogo.src=url;return;}
+  title.dataset.logoStatus='not-found';
+ });
  const meta=el('div','tl-film-meta');
  meta.innerHTML='<span class="tl-film-rating"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z" fill="currentColor"/></svg> '+(Number(m.vote_average)?Number(m.vote_average).toFixed(1):'—')+' / 10 TMDB</span>';
  if(Number(m.vote_count)>0){const votes=el('span','tl-film-votes');votes.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 19c.5-3 2.4-4.5 5.5-4.5s5 1.5 5.5 4.5M16 5.5a3 3 0 0 1 0 5.8M17 14c2.1.5 3.2 2 3.5 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg> '+Number(m.vote_count).toLocaleString();meta.appendChild(votes);}
@@ -573,7 +587,13 @@ function addToWatchlist(m,button){
 async function openTasteTrailer(movie){
  const modal=$('tl-trailer-modal'),frame=$('tl-trailer-frame'),title=$('tl-trailer-title'),notice=$('tl-trailer-notice'),external=$('tl-trailer-youtube');
  if(!modal||!frame||!title||!notice)return;
- const requestId=++state.trailerRequestId;title.textContent=(movie.title||'Film')+' — Trailer';notice.textContent='Finding an official trailer…';notice.classList.remove('tl-hidden');frame.classList.add('tl-hidden');frame.src='about:blank';external.classList.add('tl-hidden');modal.classList.remove('tl-hidden');document.body.classList.add('tl-modal-open');
+ const requestId=++state.trailerRequestId;
+ state.trailerTrigger=document.activeElement instanceof HTMLElement?document.activeElement:null;
+ title.textContent=(movie.title||'Film')+' — Trailer';
+ notice.textContent='Finding an official trailer…';notice.classList.remove('tl-hidden');
+ frame.classList.add('tl-hidden');frame.src='about:blank';external.classList.add('tl-hidden');
+ modal.classList.remove('tl-hidden');document.body.classList.add('tl-modal-open');
+ const closeButton=modal.querySelector('.tl-trailer-close');if(closeButton)closeButton.focus({preventScroll:true});
  try{
   const details=await proxy('details',{id:movie.id});if(requestId!==state.trailerRequestId)return;
   const videos=details&&details.videos&&Array.isArray(details.videos.results)?details.videos.results:[];
@@ -582,7 +602,15 @@ async function openTasteTrailer(movie){
   else{notice.textContent='No embedded trailer was found for this film. You can search YouTube without leaving this page.';external.href='https://www.youtube.com/results?search_query='+encodeURIComponent((movie.title||'')+' '+String(movie.release_date||'').slice(0,4)+' official trailer');external.textContent='Search YouTube ↗';external.classList.remove('tl-hidden');}
  }catch(_){if(requestId!==state.trailerRequestId)return;notice.textContent='The trailer service could not be reached. You can still search YouTube for this film.';external.href='https://www.youtube.com/results?search_query='+encodeURIComponent((movie.title||'')+' official trailer');external.textContent='Search YouTube ↗';external.classList.remove('tl-hidden');}
 }
-function closeTasteTrailer(){state.trailerRequestId++;const modal=$('tl-trailer-modal'),frame=$('tl-trailer-frame');if(frame)frame.src='about:blank';if(modal)modal.classList.add('tl-hidden');document.body.classList.remove('tl-modal-open');}
+function closeTasteTrailer(){
+ state.trailerRequestId++;
+ const modal=$('tl-trailer-modal'),frame=$('tl-trailer-frame'),trigger=state.trailerTrigger;
+ if(frame)frame.src='about:blank';
+ if(modal)modal.classList.add('tl-hidden');
+ document.body.classList.remove('tl-modal-open');
+ state.trailerTrigger=null;
+ if(trigger&&trigger.isConnected)trigger.focus({preventScroll:true});
+}
 function readFilters(){
  try{const x=JSON.parse(localStorage.getItem(FILTER_KEY)||'{}');if(x&&typeof x==='object')state.filters=Object.assign(state.filters,x);}catch(_){}
  const ids={title:'tl-title-filter',genre:'tl-genre-filter',excludeGenre:'tl-exclude-genre-filter',yearFrom:'tl-year-from-filter',yearTo:'tl-year-to-filter',rating:'tl-rating-filter',votes:'tl-votes-filter',runtimeMin:'tl-runtime-min-filter',runtimeMax:'tl-runtime-max-filter',language:'tl-original-language',focusAspect:'tl-focus-aspect',avoidAspect:'tl-avoid-aspect',focusTheme:'tl-focus-theme',sort:'tl-sort-filter'};
