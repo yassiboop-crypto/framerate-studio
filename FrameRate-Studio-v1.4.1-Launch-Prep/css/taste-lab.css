@@ -664,17 +664,16 @@ body.tl-modal-open{overflow:hidden}
   .tl-results-heading{font-size:9px}
   .tl-results-source{font-size:6px}
   .tl-results-grid{grid-template-columns:minmax(0,1fr);gap:13px}
-  .tl-film-card{grid-template-columns:132px minmax(0,1fr);grid-template-rows:minmax(222px,auto);min-height:222px}
-  .tl-film-art{width:100%!important;height:100%!important;min-height:222px!important}
-  .tl-film-content{height:auto;min-height:222px;padding:14px 13px 12px}
+  .tl-film-card{grid-template-columns:136px minmax(0,1fr);grid-template-rows:204px;height:204px;min-height:204px}
+  .tl-film-art{width:100%!important;height:100%!important;min-height:204px!important}
+  .tl-film-content{height:204px;min-height:204px;padding:11px 12px 10px}
   .tl-film-title{font-size:17px;line-height:1.15}
   .tl-film-meta{gap:6px;font-size:8px;margin-top:7px}
-  .tl-film-overview{-webkit-line-clamp:2;max-height:3.2em;font-size:9px;line-height:1.55;margin-top:8px}
-  .tl-film-reason{font-size:8px;max-height:43px;padding:7px 8px;margin-top:8px}
-  .tl-film-genres{margin-top:7px;gap:4px}
-  .tl-film-genre{font-size:7px;padding:3px 6px}
-  .tl-film-actions{gap:5px;padding-top:8px}
-  .tl-feedback-button{font-size:7px;min-height:27px;padding:5px 4px}
+  .tl-film-overview,.tl-film-genres{display:none}
+  .tl-film-reason{font-size:8px;max-height:38px;padding:7px 8px;margin-top:8px}
+  .tl-film-actions{gap:5px;padding-top:6px}
+  .tl-feedback-button{flex-direction:column;gap:2px;font-size:7px;min-height:27px;padding:4px 3px}
+  .tl-feedback-button.is-primary{flex-direction:row;min-height:30px}
   .tl-feedback-button svg{width:10px;height:10px}
   .tl-trailer-circle{width:40px;height:40px;opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,-50%) scale(.92)}
   .tl-feed-bottom{align-items:stretch;flex-direction:column}
@@ -714,15 +713,16 @@ body.tl-modal-open{overflow:hidden}
   .tl-filter-footer{flex-direction:column;align-items:stretch}
   .tl-results-heading{align-items:flex-start;font-size:8px}
   .tl-results-source{font-size:5px}
-  .tl-film-card{grid-template-columns:112px minmax(0,1fr);grid-template-rows:minmax(205px,auto);min-height:205px}
-  .tl-film-art{width:100%!important;height:100%!important;min-height:205px!important}
-  .tl-film-content{min-height:205px;padding:11px 10px 9px}
-  .tl-film-title{font-size:15px;line-height:1.15}
+  .tl-film-card{grid-template-columns:124px minmax(0,1fr);grid-template-rows:186px;height:186px;min-height:186px}
+  .tl-film-art{width:100%!important;height:100%!important;min-height:186px!important}
+  .tl-film-content{height:186px;min-height:186px;padding:9px 9px 8px}
+  .tl-film-title{font-size:14px;line-height:1.15}
   .tl-film-meta{font-size:7px;gap:4px;margin-top:6px}
-  .tl-film-overview{-webkit-line-clamp:2;max-height:3em;font-size:8px}
-  .tl-film-reason{font-size:7px;padding:6px;margin-top:7px}
-  .tl-film-actions{gap:4px;padding-top:6px}
-  .tl-feedback-button{font-size:6px;min-height:24px;padding:4px 3px}
+  .tl-film-overview,.tl-film-genres{display:none}
+  .tl-film-reason{font-size:7px;max-height:34px;padding:5px;margin-top:7px}
+  .tl-film-actions{gap:4px;padding-top:5px}
+  .tl-feedback-button{flex-direction:column;gap:1px;font-size:6px;min-height:24px;padding:3px}
+  .tl-feedback-button.is-primary{flex-direction:row;min-height:27px}
   .tl-feedback-button svg{width:9px;height:9px}
   .tl-trailer-circle{width:35px;height:35px}
   .tl-discovery-rail{grid-template-columns:minmax(0,1fr)}
