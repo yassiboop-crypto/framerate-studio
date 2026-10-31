@@ -375,7 +375,6 @@ async function requestFanartMovieLogo(movie){
  console.info('[Taste Lab] No clear logo was indexed for:',String(movie&&movie.title||id),{tmdbId:id,imdbId});
  return '';
 }
-}
 function drainFanartLogoQueue(){
  while(fanartLogoActive<3&&fanartLogoQueue.length){
   const job=fanartLogoQueue.shift();fanartLogoActive++;
