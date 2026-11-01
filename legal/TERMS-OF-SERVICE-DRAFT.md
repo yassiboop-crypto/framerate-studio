@@ -70,7 +70,7 @@ You may choose to connect your own API credentials for supported AI providers. Y
 
 Guest-mode keys are stored in the browser profile. Signed-in keys saved through the FrameRate Vault are encrypted server-side before database storage and are decrypted by the server when needed to make a request. This does not change your responsibilities under the provider's terms.
 
-**Pricing and billing status:** [OWNER: CONFIRM WHETHER FRAME RATE IS FREE, PAID, DONATION-SUPPORTED OR HAS ANY LIMITS/SHARED-QUOTA MODEL]. The source code reviewed for this draft does not show an in-app subscription checkout or payment processor. Do not promise that the Service, third-party APIs or user-supplied API calls are free unless the Operator has verified the full cost model. Charges imposed directly by a third-party provider are governed by the agreement between you and that provider.
+**Pricing and billing:** FrameRate Studio is maintained as a non-commercial hobby project and does not currently offer paid plans or an in-app subscription checkout, based on the creator's description and the application source reviewed for this draft. This does not mean that third-party API use is always free: a user may incur charges under the agreement for an AI provider or other third-party account they choose to use. If the project later introduces donations, sponsorships, paid features or other financial arrangements, this section must be updated before they are offered.
 
 The Operator must provide clear advance notice of any future FrameRate fee, subscription, quota or paid feature before it becomes effective, as required by applicable law.
 
@@ -125,9 +125,9 @@ The public version must show its effective date. The Operator will communicate m
 
 ## 16. Contact
 
-**Operator:** [FULL LEGAL NAME / BUSINESS NAME]  
+**Individual Operator:** [IDENTITY REQUIRED BY APPLICABLE LAW — CONFIRM BEFORE PUBLICATION]  
 **Support:** [WORKING SUPPORT EMAIL]  
-**Postal address:** [ADDRESS]  
+**Postal contact, if legally required:** [CONFIRM THE ACCEPTABLE PUBLIC CONTACT METHOD; DO NOT PUBLISH A PRIVATE HOME ADDRESS WITHOUT ADVICE]  
 **Website:** https://framerate-studio.ybenlahcen7.workers.dev/
 
 ---
