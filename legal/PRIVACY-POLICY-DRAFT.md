@@ -168,8 +168,8 @@ The Operator may update this notice when the service, providers or legal require
 ## 13. Contact and complaints
 
 **Privacy contact:** [PRIVACY EMAIL]  
-**Operator:** [LEGAL NAME / BUSINESS NAME]  
-**Postal address:** [ADDRESS]  
+**Individual Operator:** [IDENTITY REQUIRED BY APPLICABLE LAW — CONFIRM BEFORE PUBLICATION]  
+**Postal contact, if legally required:** [CONFIRM THE ACCEPTABLE PUBLIC CONTACT METHOD; DO NOT PUBLISH A PRIVATE HOME ADDRESS WITHOUT ADVICE]  
 **Applicable regulator / complaint route:** [INSERT THE CORRECT REGULATOR AND PROCESS AFTER JURISDICTIONAL REVIEW].
 
 For a Morocco-related enquiry, consult the official CNDP website at https://www.cndp.ma/.
