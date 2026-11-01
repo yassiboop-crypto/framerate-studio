@@ -4,9 +4,9 @@
 
 **Service:** FrameRate Studio  
 **Public website:** https://framerate-studio.ybenlahcen7.workers.dev/  
-**Operator:** [FULL LEGAL NAME OR REGISTERED BUSINESS NAME]  
+**Individual Operator (personal, non-commercial project):** [IDENTITY REQUIRED BY APPLICABLE LAW — CONFIRM BEFORE PUBLICATION]  
 **Support contact:** [WORKING SUPPORT EMAIL]  
-**Postal address:** [BUSINESS / LEGAL POSTAL ADDRESS, IF REQUIRED]  
+**Postal address:** [PUBLIC SUPPORT CONTACT DETAILS REQUIRED BY LAW — DO NOT PUBLISH A PRIVATE HOME ADDRESS WITHOUT ADVICE]  
 **Effective date:** [DATE OF PUBLICATION]  
 **Governing law and dispute forum:** [CONFIRM WITH LEGAL COUNSEL]
 
@@ -14,7 +14,7 @@
 
 These Terms govern access to and use of FrameRate Studio. FrameRate Studio is a film-discovery and personal cinema workspace that may provide film search and details, ratings, reviews, watchlists, Letterboxd ZIP/CSV/RSS import tools, Taste Lab recommendations, optional AI-assisted writing and ranking, and shareable review cards.
 
-The Operator's legal identity and contact details must be completed above before these Terms are published. A link to the final Terms and Privacy Notice must be shown clearly during account registration and wherever required by law. The current sign-up interface reviewed for this draft does not display a Terms acceptance checkbox or a visible link to these legal documents; the Operator must implement an appropriate notice and acceptance flow before relying on these Terms as a user agreement.
+FrameRate Studio is maintained by an individual as a personal, non-commercial hobby project. It is not operated by a company, institution or registered association. The individual who operates it is referred to in these Terms as the “Operator”. The fact that the project is non-commercial does not by itself settle which laws apply. Confirm what identifying details and contact method must legally be disclosed; do not publish a private home address without appropriate advice. A link to the final Terms and Privacy Notice must be shown clearly during account registration and wherever required by law. The current sign-up interface reviewed for this draft does not display a Terms acceptance checkbox or a visible link to these legal documents; the Operator must implement an appropriate notice and acceptance flow before relying on these Terms as a user agreement.
 
 ## 2. Eligibility and age
 
@@ -134,7 +134,7 @@ The public version must show its effective date. The Operator will communicate m
 
 ## Publication blockers — do not remove this section until each item is completed
 
-1. Complete the Operator's legal name, working contact details, effective date and governing law/forum.
+1. Confirm the individual Operator's legally required public identity/contact details, working support email, effective date and governing law/forum. Do not invent a company or association.
 2. Set minimum age and any parent/guardian consent process after reviewing target-market laws; implement it in the product.
 3. Add clear links to these Terms and the Privacy Notice plus an appropriate acceptance/notice step during sign-up. The current sign-up UI reviewed for this draft does not display that step.
 4. Confirm whether the Service is free, paid, donation-supported, quota-limited or subsidised, and state the true cost model.
