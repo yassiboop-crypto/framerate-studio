@@ -4,16 +4,16 @@
 
 **Service:** FrameRate Studio  
 **Public website:** https://framerate-studio.ybenlahcen7.workers.dev/  
-**Operator / data controller:** [FULL LEGAL NAME OR REGISTERED BUSINESS NAME]  
+**Individual Operator (personal, non-commercial project):** [IDENTITY REQUIRED BY APPLICABLE LAW — CONFIRM BEFORE PUBLICATION]  
 **Privacy contact:** [WORKING PRIVACY EMAIL]  
-**Postal address:** [BUSINESS / LEGAL POSTAL ADDRESS, IF REQUIRED]  
+**Postal address:** [PUBLIC PRIVACY CONTACT DETAILS REQUIRED BY LAW — DO NOT PUBLISH A PRIVATE HOME ADDRESS WITHOUT ADVICE]  
 **Applicable jurisdiction(s):** [CONFIRM WITH LEGAL COUNSEL]  
 **Effective date:** [DATE OF PUBLICATION]  
 **Last source review:** 1 November 2026
 
 ## 1. Who is responsible for your information?
 
-The person or organisation identified above (the “Operator”) operates FrameRate Studio and determines the purposes and means of processing personal information described in this notice. Do not publish this notice until the Operator's legal identity and a monitored privacy contact have been supplied.
+FrameRate Studio is maintained by an individual as a personal, non-commercial hobby project. It is not operated by a company, institution or registered association. The individual who operates the service is referred to in this notice as the “Operator”. This does not remove the need to check whether data-protection laws apply to the service. Before publication, confirm what identifying details and contact method must legally be disclosed; do not publish a private home address without appropriate advice.
 
 FrameRate Studio is a film-discovery and personal cinema workspace. It includes film search and details, ratings and reviews, a watchlist, Letterboxd import tools, Taste Lab recommendations, optional AI-assisted writing and ranking, and shareable review cards.
 
@@ -111,7 +111,7 @@ The RSS feature reads a public Letterboxd RSS feed through external relays. Use 
 
 The Operator must identify where the Supabase project, Cloudflare service, AI providers, data stores, backups, support systems and other processors actually process or store information. Do not assume that information remains in the country where the user is located.
 
-**Morocco-specific launch check:** If Moroccan Law No. 09-08 applies to the Operator or the processing, the Operator must determine the applicable CNDP filing/authorisation requirements before processing begins. Hosting or transferring personal information outside Morocco may require a separate transfer procedure and approval. The CNDP's official guidance explains the relevant website-processing and foreign-transfer procedures:
+**Morocco-specific launch check:** FrameRate is described by its creator as an individual, non-commercial hobby project, not a company or association. That fact alone does not determine whether Moroccan Law No. 09-08 applies. The law contains an exception for processing by a natural person for exclusively personal or domestic activities; whether a public website that accepts accounts and processes other users’ information fits that exception needs a case-specific legal assessment. If the law applies, the Operator must determine the applicable CNDP filing/authorisation requirements before processing begins. Hosting or transferring personal information outside Morocco may require a separate transfer procedure and approval. The CNDP's official guidance explains the relevant website-processing and foreign-transfer procedures:
 - https://www.cndp.ma/conditions/
 - https://www.cndp.ma/conformite-des-sites-web/
 - https://www.cndp.ma/transfert-de-donnees-a-letranger/
@@ -178,7 +178,7 @@ For a Morocco-related enquiry, consult the official CNDP website at https://www.
 
 ## Publication blockers — do not remove this section until each item is completed
 
-1. Fill the Operator's legal name, privacy email, address, effective date and applicable jurisdictions.
+1. Confirm the individual Operator's legally required public identity/contact details, privacy email, effective date and applicable jurisdictions. No company or association details should be invented. Do not publish a private home address without advice.
 2. Verify the live Cloudflare Worker configuration, Supabase project region, Edge Function secrets, authentication providers, database, backups and logs.
 3. Confirm the actual list of AI, movie-data, hosting, CDN, RSS relay and media providers, their current privacy/DPA terms, and processing countries.
 4. Obtain legal advice on applicable data-protection law and complete any required CNDP or other regulator notification/authorisation and international-transfer procedure.
