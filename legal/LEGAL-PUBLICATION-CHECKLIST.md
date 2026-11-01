@@ -26,13 +26,13 @@ This checklist separates items confirmed in the current application source from 
 
 ## B. Operator decisions required
 
-- [ ] Full legal name of the individual/business responsible for the Service.
-- [ ] Whether the Operator is established in Morocco or another country.
+- [ ] Identity of the individual Operator responsible for this personal, non-commercial project (confirm what must be public). No company or association is currently identified.
+- [ ] Where the individual Operator is established and which target countries are intended.
 - [ ] Countries in which the Service will be offered and users targeted.
 - [ ] Working privacy email, support email and postal/legal address.
 - [ ] Governing law, dispute forum and applicable consumer-rights wording.
 - [ ] Minimum age, parental-consent rule (if any), and how eligibility is actually checked.
-- [ ] Whether the Service is free, paid, donation-supported, subsidised or has limits/quotas.
+- [ ] Confirm whether users pay anything, whether donations/sponsorships exist, and whether shared API quotas or other limits apply. Do not infer the price model solely from the project's non-commercial purpose.
 - [ ] Data retention periods for account data, AI credentials, security logs, backups and support records.
 - [ ] Actual account closure and data deletion request procedure, including backup handling and completion time.
 - [ ] Actual cookie/tracker inventory from the deployed production environment.
@@ -52,9 +52,9 @@ This checklist separates items confirmed in the current application source from 
 
 ## D. Morocco-specific legal review
 
-If Moroccan Law No. 09-08 applies to the Operator or the processing:
+If Moroccan Law No. 09-08 may apply to the individual Operator or the processing:
 
-- [ ] Ask qualified Moroccan counsel or the CNDP which prior declaration or authorisation applies to each processing purpose.
+- [ ] Ask qualified Moroccan counsel or the CNDP whether the personal/domestic-activity exception applies to this public, non-commercial website, and if not, which prior declaration or authorisation applies to each processing purpose.
 - [ ] Identify every foreign hosting, storage and provider destination, including Cloudflare, Supabase and selected AI vendors.
 - [ ] Complete any required prior foreign-transfer procedure and obtain the necessary CNDP approval before the transfer begins.
 - [ ] Review the applicable rights, notices, consent, processor contracts, retention and security requirements.
