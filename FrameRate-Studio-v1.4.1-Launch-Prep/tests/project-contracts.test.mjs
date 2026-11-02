@@ -72,3 +72,14 @@ test('legal documents are marked as owner-review drafts', () => {
   assert.match(read('../legal/PRIVACY-POLICY-DRAFT.md'), /DRAFT — OWNER REVIEW REQUIRED/i);
   assert.match(read('../legal/TERMS-OF-SERVICE-DRAFT.md'), /DRAFT — OWNER REVIEW REQUIRED/i);
 });
+
+
+test('Spider-Man cursor keeps the native pointer visible with a trailing animated spider', () => {
+  const app = read('js/app.js'), styles = read('css/styles.css'), html = read('index.html');
+  assert.match(app, /startSpiderCursorFollower\(\)/);
+  assert.match(app, /pointer\.directionX/);
+  assert.match(app, /data-style="spider"|data-style===?'spider'/);
+  assert.match(styles, /data-fr-cursor-style="spider"/);
+  assert.match(styles, /frSpiderLegA/);
+  assert.match(html, /Animated spider follower/);
+});
