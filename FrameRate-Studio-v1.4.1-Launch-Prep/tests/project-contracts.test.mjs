@@ -78,7 +78,7 @@ test('Spider-Man cursor keeps the native pointer visible with a trailing animate
   const app = read('js/app.js'), styles = read('css/styles.css'), html = read('index.html');
   assert.match(app, /startSpiderCursorFollower\(\)/);
   assert.match(app, /pointer\.directionX/);
-  assert.match(app, /core\\.dataset\\.style === 'spider'/);
+  assert.match(app, /core\.dataset\.style === 'spider'/);
   assert.match(styles, /data-fr-cursor-style="spider"/);
   assert.match(styles, /frSpiderLegA/);
   assert.match(html, /Animated spider follower/);
