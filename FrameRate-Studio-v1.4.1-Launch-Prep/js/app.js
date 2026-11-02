@@ -1373,7 +1373,7 @@ const App = {
   /* ================= FOUR REALISTIC ARTIFACT CURSORS ================= */
   cursorPresets: {
     harry: { label: 'Harry Potter Wand', color: '#e9bd73', desc: 'A slim, warm wood wand with a soft spell glow' },
-    spider: { label: 'Spider-Man Web', color: '#e84a4f', desc: 'A compact red-and-blue web-pattern mask cursor' },
+    spider: { label: 'Spider-Man Spider', color: '#e84a4f', desc: 'A small animated spider that trails the native pointer' },
     saber: { label: 'Star Wars Lightsaber', color: '#55b9ff', desc: 'A small metal hilt and luminous energy blade' },
     thor: { label: "Thor's Hammer", color: '#8dbdff', desc: 'A forged metal hammer with a leather grip and storm light' }
   },
@@ -1382,7 +1382,35 @@ const App = {
     const uid = `fr-${String(style).replace(/[^a-z0-9_-]/gi, '')}-${String(cls).replace(/[^a-z0-9_-]/gi, '-') || 'icon'}`;
     const svg = {
       harry: `<svg viewBox="0 0 40 40" class="${cls}" aria-hidden="true" focusable="false"><defs><linearGradient id="${uid}-wood" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f2d6a0"/><stop offset=".2" stop-color="#a76b37"/><stop offset=".52" stop-color="#5f351d"/><stop offset=".78" stop-color="#b57a42"/><stop offset="1" stop-color="#392015"/></linearGradient><linearGradient id="${uid}-edge" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0c9"/><stop offset=".45" stop-color="#bd8750"/><stop offset="1" stop-color="#382016"/></linearGradient><radialGradient id="${uid}-spell"><stop stop-color="#fff9d9"/><stop offset=".35" stop-color="#f8d992"/><stop offset="1" stop-color="#f4ad4e" stop-opacity="0"/></radialGradient><filter id="${uid}-glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="1.4"/></filter></defs><path d="M3.8 3.8 C8 6.4 13 12.6 18.2 18.8 S28.6 30.1 32.6 34.2" fill="none" stroke="#23150f" stroke-width="5.4" stroke-linecap="round"/><path d="M3.6 3.6 C8.2 6.7 13.3 12.8 18.5 18.9 S28.7 30.2 32.8 34.3" fill="none" stroke="url(#${uid}-wood)" stroke-width="3.2" stroke-linecap="round"/><path d="M5 5.2 C9.5 8.6 14 14.5 19 20.2 S28.2 30.3 31.2 32.8" fill="none" stroke="#f7d5a1" stroke-opacity=".67" stroke-width=".8" stroke-linecap="round"/><path d="M13.2 14.8l2.1-1.4m2.8 4.2l2.4-1.4m2.8 4.1l2.1-1.4" stroke="#3b2015" stroke-opacity=".8" stroke-width=".7" stroke-linecap="round"/><ellipse cx="3.2" cy="3.3" rx="5" ry="5" fill="url(#${uid}-spell)" filter="url(#${uid}-glow)"/><path d="M3 0.8l.8 1.6 1.7.8-1.7.8L3 5.7l-.8-1.7-1.7-.8 1.7-.8Z" fill="#fff7d7" stroke="#edb95f" stroke-width=".55"/><path d="M8 8l1.2 1.5M11.2 11.7l.8 1" stroke="#fff0cb" stroke-width=".75" stroke-linecap="round" opacity=".9"/></svg>`,
-      spider: `<svg viewBox="0 0 40 40" class="${cls}" aria-hidden="true" focusable="false"><defs><linearGradient id="${uid}-red" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff8882"/><stop offset=".28" stop-color="#cf2734"/><stop offset=".65" stop-color="#8e1527"/><stop offset="1" stop-color="#3a1625"/></linearGradient><linearGradient id="${uid}-blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#75caff"/><stop offset=".3" stop-color="#1d5ea4"/><stop offset="1" stop-color="#102a58"/></linearGradient><linearGradient id="${uid}-eye" x1="0" y1="0" x2=".7" y2="1"><stop stop-color="#fff"/><stop offset=".65" stop-color="#e8f5ff"/><stop offset="1" stop-color="#9bc8e7"/></linearGradient><filter id="${uid}-shadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx=".4" dy="1.2" stdDeviation=".8" flood-color="#050914" flood-opacity=".8"/></filter></defs><path d="M7 5.2L17.2 3.2 21 5.6 24.8 3.2 34.3 5.8 32.5 18.7 27.3 29.1 20 35.5 12.6 29.1 7.1 18.7Z" fill="url(#${uid}-red)" stroke="#1a1722" stroke-width="1.8" stroke-linejoin="round" filter="url(#${uid}-shadow)"/><path d="M8.2 17.6L12.7 28.8 19.7 34.1 19.7 8.2 16.2 5.5 9 7Z" fill="url(#${uid}-blue)" opacity=".9"/><path d="M21 8.1V33.8L27.1 28.5 31.7 17.8 31 7.5 24.9 5.4Z" fill="url(#${uid}-red)" opacity=".92"/><path d="M8 7L20 15L33 7M7.5 13L20 18.8L32.5 13M10 21L20 22.5L30 21M13 28L20 26L27 28M12 7L10.8 18.8L15 29M27.8 7L29.2 18.5L25.3 29" stroke="#f6b3b0" stroke-opacity=".5" stroke-width=".65" fill="none"/><path d="M8.5 14.8Q13.9 11.5 18.2 17.6L15.1 22Q10.6 22.4 8.5 14.8Z" fill="url(#${uid}-eye)" stroke="#29141d" stroke-width="1.1"/><path d="M31.5 14.8Q26.1 11.5 21.8 17.6L24.9 22Q29.4 22.4 31.5 14.8Z" fill="url(#${uid}-eye)" stroke="#29141d" stroke-width="1.1"/><path d="M20 5.8V33M5.5 17.5L15 18.9M34.5 17.5L25 18.9" stroke="#fff0ee" stroke-opacity=".42" stroke-width=".55" fill="none"/></svg>`,
+      spider: `<svg viewBox="0 0 56 56" class="${cls}" aria-hidden="true" focusable="false">
+        <defs>
+          <radialGradient id="${uid}-abdomen" cx=".38" cy=".28" r=".78"><stop stop-color="#465264"/><stop offset=".46" stop-color="#1c2635"/><stop offset="1" stop-color="#080c14"/></radialGradient>
+          <radialGradient id="${uid}-head" cx=".34" cy=".22" r=".8"><stop stop-color="#586477"/><stop offset=".52" stop-color="#202b3b"/><stop offset="1" stop-color="#080c14"/></radialGradient>
+          <linearGradient id="${uid}-leg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#64758a"/><stop offset=".35" stop-color="#202b3a"/><stop offset="1" stop-color="#080c14"/></linearGradient>
+          <linearGradient id="${uid}-red" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff8b85"/><stop offset=".48" stop-color="#d72e40"/><stop offset="1" stop-color="#73182a"/></linearGradient>
+          <filter id="${uid}-shadow" x="-60%" y="-60%" width="220%" height="220%"><feDropShadow dx=".4" dy="2" stdDeviation="1.3" flood-color="#02050b" flood-opacity=".8"/></filter>
+        </defs>
+        <g class="fr-spider-legs" fill="none" stroke="url(#${uid}-leg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" filter="url(#${uid}-shadow)">
+          <path class="fr-spider-leg fr-spider-leg-1" d="M23 22Q17 16 13 11L6 8"/>
+          <path class="fr-spider-leg fr-spider-leg-2" d="M22 25Q14 21 9 20L3 22"/>
+          <path class="fr-spider-leg fr-spider-leg-3" d="M22 29Q14 30 9 35L4 41"/>
+          <path class="fr-spider-leg fr-spider-leg-4" d="M24 32Q19 38 17 45L12 50"/>
+          <path class="fr-spider-leg fr-spider-leg-5" d="M33 22Q39 16 43 11L50 8"/>
+          <path class="fr-spider-leg fr-spider-leg-6" d="M34 25Q42 21 47 20L53 22"/>
+          <path class="fr-spider-leg fr-spider-leg-7" d="M34 29Q42 30 47 35L52 41"/>
+          <path class="fr-spider-leg fr-spider-leg-8" d="M32 32Q37 38 39 45L44 50"/>
+        </g>
+        <g fill="none" stroke="#aebfd0" stroke-opacity=".52" stroke-width=".65" stroke-linecap="round">
+          <path d="M23 22Q17 16 13 11L6 8M22 25Q14 21 9 20L3 22M22 29Q14 30 9 35L4 41M24 32Q19 38 17 45L12 50M33 22Q39 16 43 11L50 8M34 25Q42 21 47 20L53 22M34 29Q42 30 47 35L52 41M32 32Q37 38 39 45L44 50"/>
+        </g>
+        <ellipse cx="28" cy="34" rx="7.2" ry="9.5" fill="url(#${uid}-abdomen)" stroke="#080d16" stroke-width="1.1" filter="url(#${uid}-shadow)"/>
+        <path d="M25 31Q28 28.5 31 31L29.8 35.3 28 39.5 26.2 35.3Z" fill="url(#${uid}-red)" opacity=".95"/>
+        <path d="M28 30L28 39" stroke="#ffd1cf" stroke-opacity=".5" stroke-width=".65"/>
+        <ellipse cx="28" cy="21.5" rx="5.7" ry="6.3" fill="url(#${uid}-head)" stroke="#080d16" stroke-width="1" filter="url(#${uid}-shadow)"/>
+        <circle cx="25.7" cy="20.3" r="1.05" fill="#ee4655"/><circle cx="30.3" cy="20.3" r="1.05" fill="#55a7e9"/>
+        <path d="M24.4 17.5Q28 14.8 31.6 17.5" fill="none" stroke="#b9c9d9" stroke-opacity=".58" stroke-width=".8" stroke-linecap="round"/>
+        <path d="M28 9V14" stroke="#d9e6f2" stroke-opacity=".64" stroke-width=".75" stroke-linecap="round"/>
+      </svg>`,
       saber: `<svg viewBox="0 0 40 40" class="${cls}" aria-hidden="true" focusable="false"><defs><linearGradient id="${uid}-blade" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffffff"/><stop offset=".22" stop-color="#dff8ff"/><stop offset=".58" stop-color="#4cbdff"/><stop offset="1" stop-color="#176dd5"/></linearGradient><linearGradient id="${uid}-metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffffff"/><stop offset=".17" stop-color="#9ba9b8"/><stop offset=".32" stop-color="#f3f6fa"/><stop offset=".53" stop-color="#647383"/><stop offset=".74" stop-color="#d6dee7"/><stop offset="1" stop-color="#3e4b59"/></linearGradient><linearGradient id="${uid}-grip" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#3e4855"/><stop offset=".4" stop-color="#131b28"/><stop offset=".7" stop-color="#697786"/><stop offset="1" stop-color="#202a36"/></linearGradient><filter id="${uid}-glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="2.1"/></filter></defs><path d="M3.2 3.1L22.3 22.2" stroke="#54bfff" stroke-width="6.4" stroke-linecap="round" opacity=".34" filter="url(#${uid}-glow)"/><path d="M3.2 3.1L22.3 22.2" stroke="url(#${uid}-blade)" stroke-width="3.3" stroke-linecap="round"/><path d="M3.3 3.2L22.1 22" stroke="#ffffff" stroke-width=".7" stroke-linecap="round" opacity=".95"/><path d="M18.7 20.6L22.1 17.2L25.1 20.2L21.7 23.6Z" fill="url(#${uid}-metal)" stroke="#344253" stroke-width=".8"/><path d="M21 22.1L31.7 32.8Q33 34.1 34.3 32.8L35.1 32Q36.1 31 35 29.9L24.3 19.2Z" fill="url(#${uid}-grip)" stroke="#111a25" stroke-width="1.1"/><path d="M24.3 22.6L31.5 29.8M26.4 20.5L33.6 27.7" stroke="url(#${uid}-metal)" stroke-width="1.4"/><path d="M24.9 24.5L29.6 19.8L31.8 22L27.1 26.7Z" fill="url(#${uid}-metal)" stroke="#303b48" stroke-width=".8"/><path d="M30.3 30.1L33.8 33.6" stroke="#dce5ee" stroke-width="1.1" stroke-linecap="round"/></svg>`,
       thor: `<svg viewBox="0 0 40 40" class="${cls}" aria-hidden="true" focusable="false"><defs><linearGradient id="${uid}-steel" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f4fbff"/><stop offset=".17" stop-color="#8a9bad"/><stop offset=".33" stop-color="#e4eef8"/><stop offset=".52" stop-color="#687b91"/><stop offset=".72" stop-color="#d8e4ef"/><stop offset="1" stop-color="#37485d"/></linearGradient><linearGradient id="${uid}-face" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#d9e8f6"/><stop offset=".25" stop-color="#7d91a7"/><stop offset=".5" stop-color="#43566d"/><stop offset=".75" stop-color="#9aafc2"/><stop offset="1" stop-color="#34465a"/></linearGradient><linearGradient id="${uid}-leather" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#b27e50"/><stop offset=".28" stop-color="#4c3024"/><stop offset=".5" stop-color="#a46b3e"/><stop offset=".75" stop-color="#392319"/><stop offset="1" stop-color="#8d5934"/></linearGradient><filter id="${uid}-glow" x="-70%" y="-70%" width="240%" height="240%"><feGaussianBlur stdDeviation="1.5"/></filter></defs><path d="M4.7 4.2L26.7 26.1L34.6 34" stroke="#4daaff" stroke-width="4.2" stroke-linecap="round" opacity=".2" filter="url(#${uid}-glow)"/><path d="M15.1 13.7L31.8 31.1L34.2 33.5" stroke="#171f2a" stroke-width="6" stroke-linecap="round"/><path d="M15.1 13.7L31.8 31.1L34.2 33.5" stroke="url(#${uid}-leather)" stroke-width="4.1" stroke-linecap="round"/><path d="M29.5 29L32.3 31.8M26.7 26.2L29.5 29M23.9 23.4L26.7 26.2" stroke="#d7b080" stroke-width=".8" stroke-linecap="round"/><path d="M3.3 4.9L5.6 2.5L20.8 2.6L25.8 7.2L25.5 15.2L20.9 19.9L5.9 19.4L2.5 15.5Z" fill="url(#${uid}-face)" stroke="#2e4054" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.6 4.2L20.1 4L23.4 7.4L23.1 14.5L19.2 17.8L5.9 17.3L4.3 14.6L4.5 7.4Z" fill="none" stroke="#f4f8fc" stroke-opacity=".62" stroke-width=".8"/><path d="M7 6.5H19.5M6.2 9.4H22.5M5.6 12.5H22M7 15.4H19.8" stroke="#d8e6f2" stroke-opacity=".45" stroke-width=".55"/><path d="M12.8 3.5L15 7.5L11.8 11.5L16 12.1L13.1 17.1L18 12.8L14.6 11.2L17.4 7.3Z" fill="#e8f7ff" stroke="#6db7ff" stroke-width=".45"/><path d="M24.8 7.4L29.1 5.8L27.6 10.3L31.4 12.1L26.7 13L25.2 17.4L24.1 12.9L20.3 11.1L24.1 9.9Z" fill="#f0f8ff" opacity=".9"/></svg>`,
       default: `<svg viewBox="0 0 40 40" class="${cls}" aria-hidden="true" focusable="false"><path d="M3 2.8L3.2 31.3L10.1 24.7L16.4 36.4L22.1 33.3L16.1 21.8L25.8 21.5Z" fill="#111827" stroke="#ffffff" stroke-width="2.1" stroke-linejoin="round"/><path d="M5.2 6.1L5.3 26.4L10.8 21.2L17.1 32.9L19.2 31.8L13 20L21.4 20.1Z" fill="#ffffff" stroke="#151a22" stroke-width=".75" stroke-linejoin="round"/></svg>`
@@ -1398,6 +1426,45 @@ const App = {
       thor: `<svg viewBox="0 0 1000 700" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke-linejoin="round" stroke-linecap="round"><path class="fr-thor-bolt" d="M170 -25L128 100L169 90L110 225L205 130L164 138L214 18" stroke="#a5d9ff" stroke-width="4.2"/><path class="fr-thor-bolt delay" d="M870 170L812 295L853 284L780 445L885 338L840 345L908 205" stroke="#d9f4ff" stroke-width="4.2"/><path class="fr-thor-bolt delay2" d="M530 520L490 588L521 582L478 680L548 602L519 607L552 545" stroke="#80bfff" stroke-width="3.1"/></g><path d="M0 0L80 30M920 680L1000 700" stroke="#d8f2ff" stroke-width="1" stroke-opacity=".3"/></svg>`
     };
     return scenes[style] || '';
+  },
+
+  startSpiderCursorFollower() {
+    if (this._spiderFollowFrame || typeof window.requestAnimationFrame !== 'function') return;
+    const animate = () => {
+      const core = document.getElementById('frCursorCore');
+      const pointer = this._spiderPointer;
+      if (!core || core.dataset.style !== 'spider') {
+        this._spiderFollowFrame = 0;
+        return;
+      }
+      if (pointer?.hasPosition) {
+        const trailingDistance = 34;
+        const targetX = pointer.x - pointer.directionX * trailingDistance;
+        const targetY = pointer.y - pointer.directionY * trailingDistance;
+        if (!Number.isFinite(pointer.currentX) || !Number.isFinite(pointer.currentY)) {
+          pointer.currentX = targetX;
+          pointer.currentY = targetY;
+        }
+        const dx = targetX - pointer.currentX;
+        const dy = targetY - pointer.currentY;
+        const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+        const easing = reducedMotion ? 1 : 0.19;
+        pointer.currentX += dx * easing;
+        pointer.currentY += dy * easing;
+        core.style.left = `${pointer.currentX}px`;
+        core.style.top = `${pointer.currentY}px`;
+        const facingX = pointer.x - pointer.currentX;
+        const facingY = pointer.y - pointer.currentY;
+        const angle = Math.atan2(facingY, facingX) * 180 / Math.PI + 90;
+        core.style.setProperty('--spider-rotation', `${angle}deg`);
+        if (Math.hypot(targetX - pointer.currentX, targetY - pointer.currentY) > 0.35) {
+          this._spiderFollowFrame = window.requestAnimationFrame(animate);
+          return;
+        }
+      }
+      this._spiderFollowFrame = 0;
+    };
+    this._spiderFollowFrame = window.requestAnimationFrame(animate);
   },
 
   initCursorExperience() {
@@ -1417,6 +1484,9 @@ const App = {
       core.innerHTML = this.cursorSvg('default', 'fr-cursor-glyph');
       document.body.append(atmosphere, halo, core);
     }
+    this._spiderPointer = this._spiderPointer || {
+      x: 0, y: 0, directionX: 1, directionY: 0, currentX: null, currentY: null, hasPosition: false
+    };
     this.applyCursorStyle(localStorage.getItem('fr_cursor_style') || 'default');
 
     if (!this._cursorListenersAttached) {
@@ -1426,10 +1496,36 @@ const App = {
         const core = document.getElementById('frCursorCore');
         const halo = document.getElementById('frCursorHalo');
         if (!core || !halo) return;
-        core.style.left = `${event.clientX}px`;
-        core.style.top = `${event.clientY}px`;
-        halo.style.left = `${event.clientX}px`;
-        halo.style.top = `${event.clientY}px`;
+        if (core.dataset.style === 'spider') {
+          const pointer = this._spiderPointer || (this._spiderPointer = {
+            x: event.clientX, y: event.clientY, directionX: 1, directionY: 0,
+            currentX: event.clientX - 34, currentY: event.clientY,
+            hasPosition: false
+          });
+          if (pointer.hasPosition) {
+            const dx = event.clientX - pointer.x;
+            const dy = event.clientY - pointer.y;
+            const distance = Math.hypot(dx, dy);
+            if (distance > 1.5) {
+              pointer.directionX = dx / distance;
+              pointer.directionY = dy / distance;
+            }
+          } else {
+            pointer.currentX = event.clientX - pointer.directionX * 34;
+            pointer.currentY = event.clientY - pointer.directionY * 34;
+          }
+          pointer.x = event.clientX;
+          pointer.y = event.clientY;
+          pointer.hasPosition = true;
+          core.classList.add('is-following');
+          this.startSpiderCursorFollower();
+        } else {
+          core.style.left = `${event.clientX}px`;
+          core.style.top = `${event.clientY}px`;
+          halo.style.left = `${event.clientX}px`;
+          halo.style.top = `${event.clientY}px`;
+          core.classList.remove('is-following');
+        }
         const hovering = event.target?.closest?.('button, a, select, input:not([type="text"]), .lb-star-wrapper, [role="button"]');
         core.classList.toggle('is-hovering', Boolean(hovering));
         halo.classList.toggle('is-hovering', Boolean(hovering));
@@ -1457,6 +1553,10 @@ const App = {
       document.addEventListener('pointerout', event => {
         const item = event.target?.closest?.('.glass-card, .theme-subcard, .share-card-interactive');
         if (item && !item.contains(event.relatedTarget)) item.classList.remove('fr-spotlight-active');
+        if (!event.relatedTarget && this._spiderPointer) {
+          this._spiderPointer.hasPosition = false;
+          document.getElementById('frCursorCore')?.classList.remove('is-following');
+        }
       }, { passive: true });
       document.addEventListener('click', event => {
         const wrap = document.getElementById('cursorChooserWrap');
@@ -1504,6 +1604,12 @@ const App = {
       core.dataset.style = next;
       core.innerHTML = next === 'default' ? '' : this.cursorSvg(next, 'fr-cursor-glyph');
       core.style.setProperty('--cursor-main', preset.color);
+      if (next === 'spider' && this._spiderPointer?.hasPosition) {
+        core.classList.add('is-following');
+        this.startSpiderCursorFollower();
+      } else if (next !== 'spider') {
+        core.classList.remove('is-following');
+      }
     }
     if (halo) halo.dataset.style = next;
     if (atmosphere) {
